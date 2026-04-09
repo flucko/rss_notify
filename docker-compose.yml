@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   rss-notify:
-    build: .
+    image: ghcr.io/flucko/rss_notify:latest
     container_name: rss-notify
     restart: unless-stopped
     ports:
