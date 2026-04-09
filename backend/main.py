@@ -10,8 +10,17 @@ from backend import models, schemas
 from backend.database import engine, get_db, SessionLocal
 from backend.rss_checker import check_feeds
 import requests
+from sqlalchemy import text
 
 models.Base.metadata.create_all(bind=engine)
+
+# Auto-migrate our new column if it doesn't exist for older databases
+with engine.connect() as conn:
+    try:
+        conn.execute(text("SELECT check_frequency_minutes FROM settings LIMIT 1"))
+    except Exception:
+        conn.execute(text("ALTER TABLE settings ADD COLUMN check_frequency_minutes INTEGER DEFAULT 5"))
+        conn.commit()
 
 scheduler = BackgroundScheduler()
 
