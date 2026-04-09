@@ -4,6 +4,7 @@ from typing import List
 class SettingsBase(BaseModel):
     pushover_token: str
     pushover_user_key: str
+    check_frequency_minutes: int = 5
 
 class SettingsCreate(SettingsBase):
     pass

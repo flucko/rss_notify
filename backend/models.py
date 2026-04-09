@@ -7,6 +7,7 @@ class Settings(Base):
     id = Column(Integer, primary_key=True, index=True)
     pushover_token = Column(String, default="")
     pushover_user_key = Column(String, default="")
+    check_frequency_minutes = Column(Integer, default=5)
 
 class Feed(Base):
     __tablename__ = "feeds"

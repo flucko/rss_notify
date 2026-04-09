@@ -7,18 +7,35 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import threading
 
 from backend import models, schemas
-from backend.database import engine, get_db
+from backend.database import engine, get_db, SessionLocal
 from backend.rss_checker import check_feeds
+import requests
 
 models.Base.metadata.create_all(bind=engine)
 
 scheduler = BackgroundScheduler()
-# Check feeds every 5 minutes
-scheduler.add_job(check_feeds, 'interval', minutes=5)
+
+def configure_scheduler():
+    db = SessionLocal()
+    try:
+        settings = db.query(models.Settings).first()
+        freq = settings.check_frequency_minutes if settings else 5
+    except Exception:
+        freq = 5
+    finally:
+        db.close()
+        
+    try:
+        scheduler.remove_job('check_feeds_job')
+    except Exception:
+        pass
+        
+    scheduler.add_job(check_feeds, 'interval', minutes=freq, id='check_feeds_job')
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
+    configure_scheduler()
     scheduler.start()
     yield
     # Shutdown
@@ -40,7 +57,7 @@ def read_root():
 def get_settings(db: Session = Depends(get_db)):
     settings = db.query(models.Settings).first()
     if not settings:
-        settings = models.Settings(pushover_token="", pushover_user_key="")
+        settings = models.Settings(pushover_token="", pushover_user_key="", check_frequency_minutes=5)
         db.add(settings)
         db.commit()
         db.refresh(settings)
@@ -54,9 +71,33 @@ def update_settings(settings_in: schemas.SettingsCreate, db: Session = Depends(g
         db.add(settings)
     settings.pushover_token = settings_in.pushover_token
     settings.pushover_user_key = settings_in.pushover_user_key
+    settings.check_frequency_minutes = settings_in.check_frequency_minutes
     db.commit()
     db.refresh(settings)
+    configure_scheduler()
     return settings
+
+@app.post("/api/test-pushover")
+def test_pushover(db: Session = Depends(get_db)):
+    settings = db.query(models.Settings).first()
+    if not settings or not settings.pushover_token or not settings.pushover_user_key:
+        raise HTTPException(status_code=400, detail="Missing Pushover credentials")
+        
+    payload = {
+        "token": settings.pushover_token,
+        "user": settings.pushover_user_key,
+        "title": "RSS Notify Test",
+        "message": "Pushover integration is working perfectly!"
+    }
+    
+    try:
+        r = requests.post("https://api.pushover.net/1/messages.json", data=payload, timeout=10)
+        if r.status_code == 200:
+            return {"ok": True}
+        else:
+            raise HTTPException(status_code=400, detail=r.text)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/feeds", response_model=list[schemas.Feed])
 def read_feeds(db: Session = Depends(get_db)):

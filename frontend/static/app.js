@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('settingsForm').addEventListener('submit', handleSaveSettings);
     document.getElementById('addFeedForm').addEventListener('submit', handleAddFeed);
     document.getElementById('checkNowBtn').addEventListener('click', triggerCheckFeeds);
+    document.getElementById('testPushoverBtn').addEventListener('click', testPushover);
 });
 
 async function loadSettings() {
@@ -14,6 +15,7 @@ async function loadSettings() {
         const settings = await res.json();
         document.getElementById('pushoverToken').value = settings.pushover_token || '';
         document.getElementById('pushoverUserKey').value = settings.pushover_user_key || '';
+        document.getElementById('checkFrequency').value = settings.check_frequency_minutes || 5;
     } catch (e) {
         console.error("Error loading settings", e);
     }
@@ -23,12 +25,17 @@ async function handleSaveSettings(e) {
     e.preventDefault();
     const token = document.getElementById('pushoverToken').value;
     const userKey = document.getElementById('pushoverUserKey').value;
+    const frequency = parseInt(document.getElementById('checkFrequency').value, 10);
     
     try {
         await fetch('/api/settings', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({pushover_token: token, pushover_user_key: userKey})
+            body: JSON.stringify({
+                pushover_token: token, 
+                pushover_user_key: userKey,
+                check_frequency_minutes: frequency
+            })
         });
         const msg = document.getElementById('settingsMsg');
         msg.textContent = "Settings saved!";
@@ -36,6 +43,38 @@ async function handleSaveSettings(e) {
         setTimeout(() => msg.textContent = "", 3000);
     } catch (e) {
         console.error("Error saving settings", e);
+    }
+}
+
+async function testPushover() {
+    const btn = document.getElementById('testPushoverBtn');
+    const msg = document.getElementById('settingsMsg');
+    
+    // Make sure we save first
+    await handleSaveSettings(new Event('submit', {cancelable: true}));
+    
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+    
+    try {
+        const res = await fetch('/api/test-pushover', { method: 'POST' });
+        if (res.ok) {
+            msg.textContent = "Test notification sent!";
+            msg.className = "msg success";
+        } else {
+            const err = await res.json();
+            msg.textContent = `Error: ${err.detail || 'Failed to send test'}`;
+            msg.className = "msg danger";
+        }
+    } catch (e) {
+        msg.textContent = "Failed to communicate with server.";
+        msg.className = "msg danger";
+        console.error(e);
+    } finally {
+        setTimeout(() => msg.textContent = "", 4000);
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     }
 }
 
