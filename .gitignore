@@ -1,0 +1,26 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# SQLite databases (we want to exclude test databases created directly in the backend but allow tracking of directory structures if necessary)
+*.sqlite3
+*.db
+data/*
+!data/.keep
+
+# macOS
+.DS_Store
+
+# IDEs
+.idea/
+.vscode/

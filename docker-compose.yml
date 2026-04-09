@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  rss-notify:
+    build: .
+    container_name: rss-notify
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount the local ./data folder to the container's /app/data
+      # This ensures local sqlite database persistence
+      - ./data:/app/data
+    environment:
+      - TZ=America/New_York # Set to your local timezone
