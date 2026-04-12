@@ -4,6 +4,8 @@ A lightweight, modern web application for monitoring RSS feeds and pushing notif
 
 ## Features
 - **Modern Web UI**: Beautiful glassmorphism UI for managing your feeds and rules.
+- **Adjustable Target Filters**: Configure trigger words to precisely match against the article Title, the Description, or Both.
+- **Manual Sync Previews**: Render exactly how your feeds parse by pulling fresh un-filtered data directly into a visual UI overlay before finalizing rules.
 - **Exact Keyword Matching**: Allows configuring per-feed keywords to look out for. Use exact word boundaries for maximum control.
 - **Deduplication Engine**: Uses SQLite to keep track of matched articles and prevent duplicated push notifications.
 - **Containerized**: Built specifically to be run on home lab servers like Unraid as a fully stateless Docker container. All configurations and states are stored in an easily mountable local database.

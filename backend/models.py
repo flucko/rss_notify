@@ -14,6 +14,7 @@ class Feed(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     url = Column(String, unique=True, index=True)
+    filter_target = Column(String, default="title")
     
     keywords = relationship("Keyword", back_populates="feed", cascade="all, delete-orphan")
 

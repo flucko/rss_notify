@@ -29,9 +29,13 @@ class Keyword(KeywordBase):
 class FeedBase(BaseModel):
     name: str
     url: str
+    filter_target: str = "title"
 
 class FeedCreate(FeedBase):
     pass
+
+class FeedUpdate(BaseModel):
+    filter_target: str
 
 class Feed(FeedBase):
     id: int

@@ -21,6 +21,11 @@ with engine.connect() as conn:
     except Exception:
         conn.execute(text("ALTER TABLE settings ADD COLUMN check_frequency_minutes INTEGER DEFAULT 5"))
         conn.commit()
+    try:
+        conn.execute(text("SELECT filter_target FROM feeds LIMIT 1"))
+    except Exception:
+        conn.execute(text("ALTER TABLE feeds ADD COLUMN filter_target VARCHAR DEFAULT 'title'"))
+        conn.commit()
 
 scheduler = BackgroundScheduler()
 
@@ -114,11 +119,21 @@ def read_feeds(db: Session = Depends(get_db)):
 
 @app.post("/api/feeds", response_model=schemas.Feed)
 def create_feed(feed: schemas.FeedCreate, db: Session = Depends(get_db)):
-    db_feed = models.Feed(name=feed.name, url=feed.url)
+    db_feed = models.Feed(name=feed.name, url=feed.url, filter_target=feed.filter_target)
     db.add(db_feed)
     db.commit()
     db.refresh(db_feed)
     return db_feed
+
+@app.put("/api/feeds/{feed_id}", response_model=schemas.Feed)
+def update_feed(feed_id: int, feed_update: schemas.FeedUpdate, db: Session = Depends(get_db)):
+    feed = db.query(models.Feed).filter(models.Feed.id == feed_id).first()
+    if not feed:
+        raise HTTPException(status_code=404, detail="Feed not found")
+    feed.filter_target = feed_update.filter_target
+    db.commit()
+    db.refresh(feed)
+    return feed
 
 @app.delete("/api/feeds/{feed_id}")
 def delete_feed(feed_id: int, db: Session = Depends(get_db)):
@@ -152,7 +167,6 @@ def delete_keyword(keyword_id: int, db: Session = Depends(get_db)):
 
 @app.post("/api/check")
 def trigger_check():
-    # Trigger a manual check in a new thread
-    t = threading.Thread(target=check_feeds)
-    t.start()
-    return {"status": "started"}
+    # Trigger a manual check synchronously and return previews
+    previews = check_feeds(manual_sync=True)
+    return {"status": "success", "previews": previews}

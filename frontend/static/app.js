@@ -108,6 +108,14 @@ function renderFeeds(feeds) {
             </span>
         `).join('');
 
+        let filterSelectHTML = `
+            <select onchange="updateFeedFilter(${feed.id}, this.value)" style="width: auto; padding: 0.25rem 0.5rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; background: rgba(0,0,0,0.3); font-size: 0.85rem;">
+                <option value="title" ${feed.filter_target === 'title' ? 'selected' : ''}>Title only</option>
+                <option value="description" ${feed.filter_target === 'description' ? 'selected' : ''}>Description only</option>
+                <option value="both" ${feed.filter_target === 'both' ? 'selected' : ''}>Title and Description</option>
+            </select>
+        `;
+
         div.innerHTML = `
             <div class="feed-header">
                 <div class="feed-info">
@@ -118,13 +126,16 @@ function renderFeeds(feeds) {
             </div>
             
             <div class="keywords-section">
-                <h4>Keywords (Exact Match)</h4>
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                    <h4 style="margin: 0; color: var(--text-primary); font-size: 0.95rem;">Trigger words to exact match within the feed's</h4>
+                    ${filterSelectHTML}
+                </div>
                 <form class="keyword-form" onsubmit="handleAddKeyword(event, ${feed.id})">
-                    <input type="text" id="kwInput-${feed.id}" placeholder="New keyword..." required>
+                    <input type="text" id="kwInput-${feed.id}" placeholder="New trigger word..." required>
                     <button type="submit" class="btn success"><i class="fa-solid fa-plus"></i></button>
                 </form>
                 <div class="keywords-list">
-                    ${keywordsHTML || '<span style="font-size: 0.75rem; color: var(--text-secondary);">No keywords yet. Add exact words to trigger alerts.</span>'}
+                    ${keywordsHTML || '<span style="font-size: 0.75rem; color: var(--text-secondary);">No trigger words yet. Add words to monitor this feed snippet.</span>'}
                 </div>
             </div>
         `;
@@ -136,17 +147,30 @@ async function handleAddFeed(e) {
     e.preventDefault();
     const name = document.getElementById('feedName').value;
     const url = document.getElementById('feedUrl').value;
+    const filter_target = document.getElementById('feedFilterTarget').value;
     
     try {
         await fetch('/api/feeds', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({name, url})
+            body: JSON.stringify({name, url, filter_target})
         });
         document.getElementById('addFeedForm').reset();
         loadFeeds();
     } catch (e) {
         console.error("Error adding feed", e);
+    }
+}
+
+async function updateFeedFilter(id, value) {
+    try {
+        await fetch(`/api/feeds/${id}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({filter_target: value})
+        });
+    } catch (e) {
+        console.error("Error updating feed filter", e);
     }
 }
 
@@ -194,14 +218,41 @@ async function triggerCheckFeeds() {
     btn.disabled = true;
     
     try {
-        await fetch('/api/check', { method: 'POST' });
+        const res = await fetch('/api/check', { method: 'POST' });
+        const data = await res.json();
+        
+        if (data.previews) {
+            let html = '';
+            if (data.previews.length === 0) {
+                html = '<p>No feeds registered for preview.</p>';
+            } else {
+                data.previews.forEach(p => {
+                    html += `<h3>${p.feed_name}</h3>`;
+                    if (p.entries.length === 0) {
+                        html += '<p>No entries found.</p>';
+                    } else {
+                        html += `<ul style="list-style: none; padding: 0; margin-bottom: 1rem;">`;
+                        p.entries.forEach(e => {
+                            html += `
+                                <li style="border-bottom: 1px solid rgba(255,255,255,0.1); padding: 0.5rem 0;">
+                                    <strong>Title:</strong> <a href="${e.url}" target="_blank" style="color: var(--primary);">${e.title}</a><br/>
+                                    <strong>Description:</strong> <span style="font-size: 0.85em; opacity: 0.8;">${e.description ? e.description.substring(0, 500) + (e.description.length > 500 ? '...' : '') : '<i>No description</i>'}</span>
+                                </li>
+                            `;
+                        });
+                        html += `</ul>`;
+                    }
+                });
+            }
+            document.getElementById('previewContent').innerHTML = html;
+            document.getElementById('previewModal').classList.add('active');
+        }
+        
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Check Complete';
         setTimeout(() => {
-            btn.innerHTML = '<i class="fa-solid fa-check"></i> Check Triggered';
-            setTimeout(() => {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }, 2000);
-        }, 500); 
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }, 2000);
     } catch (e) {
         console.error("Error triggering check", e);
         btn.innerHTML = originalText;

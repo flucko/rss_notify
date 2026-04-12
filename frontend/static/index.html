@@ -12,12 +12,28 @@
     <div class="background-mesh"></div>
     <div class="container">
         <header class="glass-panel header">
-            <div class="logo">
-                <i class="fa-solid fa-rss-square fa-2x"></i>
-                <h1>RSS Notify</h1>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <div class="logo">
+                    <i class="fa-solid fa-rss-square fa-2x"></i>
+                    <h1>RSS Notify</h1>
+                </div>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; max-width: 500px; margin-left: 2.5rem;">
+                    A lightweight containerized service that monitors RSS feeds and pushes instant device notifications whenever specific trigger words appear.
+                </p>
             </div>
             <button id="checkNowBtn" class="btn primary"><i class="fa-solid fa-rotate"></i> Check Feeds Now</button>
         </header>
+
+        <!-- Preview Modal -->
+        <div id="previewModal" class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fa-solid fa-eye"></i> Sync Preview Data</h2>
+                    <button class="btn danger" onclick="document.getElementById('previewModal').classList.remove('active')"><i class="fa-solid fa-xmark"></i> Close</button>
+                </div>
+                <div id="previewContent"></div>
+            </div>
+        </div>
 
         <div class="grid">
             <aside class="glass-panel settings-panel">
@@ -51,6 +67,11 @@
                 <form id="addFeedForm" class="add-form">
                     <input type="text" id="feedName" placeholder="Feed Name (e.g., Laptops)" required>
                     <input type="url" id="feedUrl" placeholder="RSS URL (e.g., https://forums.redflagdeals.com/feed/forum/9)" required>
+                    <select id="feedFilterTarget" required>
+                        <option value="title">Match Trigger Words in Title</option>
+                        <option value="description">Match Trigger Words in Description</option>
+                        <option value="both">Match Trigger Words in Both</option>
+                    </select>
                     <button type="submit" class="btn success"><i class="fa-solid fa-plus"></i> Add</button>
                 </form>
                 
