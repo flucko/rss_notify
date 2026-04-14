@@ -1,5 +1,11 @@
 import sqlite3
 import os
+import logging
+
+from backend.logging_config import setup_logging
+
+setup_logging()
+logger = logging.getLogger(__name__)
 
 db_path = os.environ.get("DB_PATH", "/app/data/rss.db")
 if os.environ.get("ENV") == "development":
@@ -11,10 +17,11 @@ if os.path.exists(db_path):
     try:
         cursor.execute("ALTER TABLE settings ADD COLUMN check_frequency_minutes INTEGER DEFAULT 5")
         conn.commit()
-        print("Migration successful.")
+        logger.info("Migration successful: added 'check_frequency_minutes' column")
     except sqlite3.OperationalError as e:
         # It's okay if it already exists
-        print(f"Operational error (might already exist): {e}")
+        logger.info(f"Migration skipped (column may already exist): {e}")
     conn.close()
 else:
-    print("Database does not exist yet. No migration needed.")
+    logger.info("Database does not exist yet — no migration needed")
+
