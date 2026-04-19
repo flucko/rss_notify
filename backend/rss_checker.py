@@ -92,7 +92,9 @@ def check_feeds(manual_sync=False):
                     continue
 
                 for kw in feed.keywords:
-                    pattern = rf"\b{re.escape(kw.word)}\b"
+                    # Replace escaped spaces with \s* to make spaces optional
+                    escaped_word = re.escape(kw.word).replace(r'\ ', r'\s*')
+                    pattern = rf"\b{escaped_word}\b"
                     if re.search(pattern, target_text, re.IGNORECASE):
                         matches_found += 1
                         logger.info(f"Match found! Keyword: '{kw.word}' in '{title[:60]}'")
@@ -110,7 +112,14 @@ def check_feeds(manual_sync=False):
                             try:
                                 response = requests.post("https://api.pushover.net/1/messages.json", data=payload, timeout=10)
                                 if response.status_code == 200:
-                                    new_history = History(thread_url=link)
+                                    from datetime import datetime
+                                    new_history = History(
+                                        thread_url=link,
+                                        timestamp=datetime.utcnow().isoformat() + "Z",
+                                        title=title,
+                                        feed_name=feed.name,
+                                        keyword=kw.word
+                                    )
                                     db.add(new_history)
                                     db.commit()
                                     notifications_sent += 1

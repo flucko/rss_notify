@@ -21,6 +21,17 @@ if os.path.exists(db_path):
     except sqlite3.OperationalError as e:
         # It's okay if it already exists
         logger.info(f"Migration skipped (column may already exist): {e}")
+
+    try:
+        cursor.execute("ALTER TABLE history ADD COLUMN timestamp VARCHAR DEFAULT ''")
+        cursor.execute("ALTER TABLE history ADD COLUMN title VARCHAR DEFAULT ''")
+        cursor.execute("ALTER TABLE history ADD COLUMN feed_name VARCHAR DEFAULT ''")
+        cursor.execute("ALTER TABLE history ADD COLUMN keyword VARCHAR DEFAULT ''")
+        conn.commit()
+        logger.info("Migration successful: added history columns")
+    except sqlite3.OperationalError as e:
+        logger.info(f"Migration skipped for history: {e}")
+
     conn.close()
 else:
     logger.info("Database does not exist yet — no migration needed")

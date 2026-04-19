@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     loadSettings();
     loadFeeds();
+    loadHistory();
 
     // Event Listeners
     document.getElementById('settingsForm').addEventListener('submit', handleSaveSettings);
@@ -249,6 +250,7 @@ async function triggerCheckFeeds() {
         }
         
         btn.innerHTML = '<i class="fa-solid fa-check"></i> Check Complete';
+        loadHistory(); // Reload history just in case we found new matches!
         setTimeout(() => {
             btn.innerHTML = originalText;
             btn.disabled = false;
@@ -258,4 +260,43 @@ async function triggerCheckFeeds() {
         btn.innerHTML = originalText;
         btn.disabled = false;
     }
+}
+
+async function loadHistory() {
+    try {
+        const res = await fetch('/api/history');
+        const history = await res.json();
+        renderHistory(history);
+    } catch (e) {
+        console.error("Error loading history", e);
+    }
+}
+
+function renderHistory(history) {
+    const container = document.getElementById('historyContainer');
+    container.innerHTML = '';
+    
+    if (history.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 2rem;">No notification history yet.</p>';
+        return;
+    }
+
+    let html = '<div style="display: flex; flex-direction: column; gap: 1rem;">';
+    history.forEach(item => {
+        let displayTime = item.timestamp ? new Date(item.timestamp).toLocaleString() : 'Unknown Time';
+        html += `
+            <div class="feed-item" style="border-left: 4px solid var(--primary);">
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">
+                    <i class="fa-regular fa-clock"></i> ${displayTime} 
+                    &bull; <span style="color: var(--primary); font-weight: 600;">Trigger: "${item.keyword}"</span> 
+                    &bull; Feed: ${item.feed_name || 'Unknown'}
+                </div>
+                <h3 style="margin-bottom: 0.25rem; font-size: 1.05rem;">
+                    <a href="${item.thread_url}" target="_blank" style="color: var(--text-primary); text-decoration: none;">${item.title || item.thread_url}</a>
+                </h3>
+            </div>
+        `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
 }

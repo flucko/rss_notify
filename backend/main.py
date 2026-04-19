@@ -34,6 +34,16 @@ with engine.connect() as conn:
         conn.execute(text("ALTER TABLE feeds ADD COLUMN filter_target VARCHAR DEFAULT 'title'"))
         conn.commit()
 
+    try:
+        conn.execute(text("SELECT timestamp FROM history LIMIT 1"))
+    except Exception:
+        logger.info("Migrating database: adding extra history columns")
+        conn.execute(text("ALTER TABLE history ADD COLUMN timestamp VARCHAR DEFAULT ''"))
+        conn.execute(text("ALTER TABLE history ADD COLUMN title VARCHAR DEFAULT ''"))
+        conn.execute(text("ALTER TABLE history ADD COLUMN feed_name VARCHAR DEFAULT ''"))
+        conn.execute(text("ALTER TABLE history ADD COLUMN keyword VARCHAR DEFAULT ''"))
+        conn.commit()
+
 scheduler = BackgroundScheduler()
 
 def configure_scheduler():
@@ -228,3 +238,9 @@ def trigger_check():
     logger.info("Manual feed check triggered via API")
     previews = check_feeds(manual_sync=True)
     return {"status": "success", "previews": previews}
+
+@app.get("/api/history", response_model=list[schemas.History])
+def get_history(db: Session = Depends(get_db)):
+    # Return deepest history, order by ID desc for chronological (assuming ID auto inc)
+    # Alternatively by timestamp if present
+    return db.query(models.History).order_by(models.History.id.desc()).limit(50).all()

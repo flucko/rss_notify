@@ -30,3 +30,7 @@ class History(Base):
     __tablename__ = "history"
     id = Column(Integer, primary_key=True, index=True)
     thread_url = Column(String, unique=True, index=True)
+    timestamp = Column(String, default="")
+    title = Column(String, default="")
+    feed_name = Column(String, default="")
+    keyword = Column(String, default="")

@@ -42,3 +42,16 @@ class Feed(FeedBase):
     keywords: List[Keyword] = []
     class Config:
         from_attributes = True
+
+class HistoryBase(BaseModel):
+    thread_url: str
+    timestamp: str = ""
+    title: str = ""
+    feed_name: str = ""
+    keyword: str = ""
+
+class History(HistoryBase):
+    id: int
+    class Config:
+        from_attributes = True
+
