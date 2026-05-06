@@ -315,6 +315,73 @@ input:focus {
     padding-bottom: 0;
 }
 
+/* Collapsible panel */
+.collapsible-header {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.collapsible-header:hover { opacity: 0.85; }
+.collapsible-header h2 { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
+.btn-collapse {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0.25rem 0.4rem;
+    border-radius: 4px;
+    transition: color 0.2s ease;
+}
+.btn-collapse:hover { color: var(--text-primary); }
+.collapsible-body { margin-top: 1.5rem; }
+
+/* Entry feed */
+.entries-list { display: flex; flex-direction: column; }
+
+.date-separator {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.5rem 0 0.25rem;
+    border-bottom: 1px solid var(--glass-border);
+    margin-bottom: 0.25rem;
+}
+
+/* Alerted entry highlight — amber */
+.entry-alerted {
+    border-left: 4px solid #f59e0b;
+    background: rgba(245, 158, 11, 0.05);
+}
+
+.alert-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 12px;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+/* Entry count badge in panel header */
+.count-badge {
+    font-size: 0.72rem;
+    background: rgba(59, 130, 246, 0.2);
+    color: var(--primary);
+    padding: 0.1rem 0.5rem;
+    border-radius: 10px;
+    margin-left: 0.4rem;
+    font-weight: 600;
+}
+
 @media (max-width: 768px) {
     .grid { grid-template-columns: 1fr; }
     .add-form { grid-template-columns: 1fr; }

@@ -3,9 +3,10 @@ import requests
 import re
 import time
 import logging
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from backend.database import SessionLocal
-from backend.models import Feed, Settings, History, Keyword
+from backend.models import Feed, Settings, History, Keyword, RSSEntry
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +77,25 @@ def check_feeds(manual_sync=False):
                         "url": link
                     })
 
+                # Store entry in rss_entries table if not already there
+                if link and not db.query(RSSEntry).filter(RSSEntry.url == link).first():
+                    pub = entry.get('published_parsed') or entry.get('updated_parsed')
+                    if pub:
+                        published_at = time.strftime('%Y-%m-%dT%H:%M:%SZ', pub)
+                    else:
+                        published_at = datetime.utcnow().isoformat() + "Z"
+                    db.add(RSSEntry(
+                        feed_name=feed.name,
+                        title=title,
+                        url=link,
+                        description=clean_summary[:2000],
+                        published_at=published_at,
+                        fetched_at=datetime.utcnow().isoformat() + "Z",
+                        alerted=0,
+                        keyword=""
+                    ))
+                    db.commit()
+
                 if not feed.keywords:
                     continue
 
@@ -112,7 +132,6 @@ def check_feeds(manual_sync=False):
                             try:
                                 response = requests.post("https://api.pushover.net/1/messages.json", data=payload, timeout=10)
                                 if response.status_code == 200:
-                                    from datetime import datetime
                                     new_history = History(
                                         thread_url=link,
                                         timestamp=datetime.utcnow().isoformat() + "Z",
@@ -122,6 +141,13 @@ def check_feeds(manual_sync=False):
                                     )
                                     db.add(new_history)
                                     db.commit()
+
+                                    rss_entry = db.query(RSSEntry).filter(RSSEntry.url == link).first()
+                                    if rss_entry:
+                                        rss_entry.alerted = 1
+                                        rss_entry.keyword = kw.word
+                                        db.commit()
+
                                     notifications_sent += 1
                                     logger.info(f"Notification sent for: {link}")
                                 else:
@@ -135,6 +161,13 @@ def check_feeds(manual_sync=False):
 
             if manual_sync:
                 preview_data.append(feed_preview)
+
+        # Prune entries older than 7 days
+        cutoff = (datetime.utcnow() - timedelta(days=7)).isoformat() + "Z"
+        deleted_count = db.query(RSSEntry).filter(RSSEntry.published_at < cutoff).delete()
+        if deleted_count:
+            db.commit()
+            logger.info(f"Pruned {deleted_count} RSS entries older than 7 days")
 
         elapsed = round(time.time() - start_time, 2)
         logger.info(

@@ -1,13 +1,23 @@
 document.addEventListener('DOMContentLoaded', () => {
     loadSettings();
     loadFeeds();
-    loadHistory();
+    loadEntries();
 
-    // Event Listeners
     document.getElementById('settingsForm').addEventListener('submit', handleSaveSettings);
     document.getElementById('addFeedForm').addEventListener('submit', handleAddFeed);
     document.getElementById('checkNowBtn').addEventListener('click', triggerCheckFeeds);
     document.getElementById('testPushoverBtn').addEventListener('click', testPushover);
+
+    // Collapsible keyword setup panel
+    document.getElementById('feedsPanelHeader').addEventListener('click', (e) => {
+        if (e.target.closest('button') && !e.target.closest('#feedsToggleBtn')) return;
+        const body = document.getElementById('feedsPanelBody');
+        const btn = document.getElementById('feedsToggleBtn');
+        const expanded = body.style.display !== 'none';
+        body.style.display = expanded ? 'none' : 'block';
+        btn.setAttribute('aria-expanded', String(!expanded));
+        btn.querySelector('i').className = expanded ? 'fa-solid fa-chevron-down' : 'fa-solid fa-chevron-up';
+    });
 });
 
 async function loadSettings() {
@@ -27,13 +37,13 @@ async function handleSaveSettings(e) {
     const token = document.getElementById('pushoverToken').value;
     const userKey = document.getElementById('pushoverUserKey').value;
     const frequency = parseInt(document.getElementById('checkFrequency').value, 10);
-    
+
     try {
         await fetch('/api/settings', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
-                pushover_token: token, 
+                pushover_token: token,
                 pushover_user_key: userKey,
                 check_frequency_minutes: frequency
             })
@@ -50,14 +60,13 @@ async function handleSaveSettings(e) {
 async function testPushover() {
     const btn = document.getElementById('testPushoverBtn');
     const msg = document.getElementById('settingsMsg');
-    
-    // Make sure we save first
+
     await handleSaveSettings(new Event('submit', {cancelable: true}));
-    
+
     const originalText = btn.innerHTML;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
     btn.disabled = true;
-    
+
     try {
         const res = await fetch('/api/test-pushover', { method: 'POST' });
         if (res.ok) {
@@ -92,7 +101,7 @@ async function loadFeeds() {
 function renderFeeds(feeds) {
     const container = document.getElementById('feedsContainer');
     container.innerHTML = '';
-    
+
     if (feeds.length === 0) {
         container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 2rem;">No feeds added yet.</p>';
         return;
@@ -101,7 +110,7 @@ function renderFeeds(feeds) {
     feeds.forEach(feed => {
         const div = document.createElement('div');
         div.className = 'feed-item';
-        
+
         let keywordsHTML = feed.keywords.map(kw => `
             <span class="keyword-tag">
                 ${kw.word}
@@ -125,7 +134,7 @@ function renderFeeds(feeds) {
                 </div>
                 <button class="btn danger" onclick="deleteFeed(${feed.id})" title="Delete Feed"><i class="fa-solid fa-trash"></i></button>
             </div>
-            
+
             <div class="keywords-section">
                 <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap;">
                     <h4 style="margin: 0; color: var(--text-primary); font-size: 0.95rem;">Trigger words to exact match within the feed's</h4>
@@ -149,7 +158,7 @@ async function handleAddFeed(e) {
     const name = document.getElementById('feedName').value;
     const url = document.getElementById('feedUrl').value;
     const filter_target = document.getElementById('feedFilterTarget').value;
-    
+
     try {
         await fetch('/api/feeds', {
             method: 'POST',
@@ -189,7 +198,7 @@ async function handleAddKeyword(e, feedId) {
     e.preventDefault();
     const input = document.getElementById(`kwInput-${feedId}`);
     const word = input.value;
-    
+
     try {
         await fetch(`/api/feeds/${feedId}/keywords`, {
             method: 'POST',
@@ -217,11 +226,11 @@ async function triggerCheckFeeds() {
     const originalText = btn.innerHTML;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking...';
     btn.disabled = true;
-    
+
     try {
         const res = await fetch('/api/check', { method: 'POST' });
         const data = await res.json();
-        
+
         if (data.previews) {
             let html = '';
             if (data.previews.length === 0) {
@@ -248,9 +257,9 @@ async function triggerCheckFeeds() {
             document.getElementById('previewContent').innerHTML = html;
             document.getElementById('previewModal').classList.add('active');
         }
-        
+
         btn.innerHTML = '<i class="fa-solid fa-check"></i> Check Complete';
-        loadHistory(); // Reload history just in case we found new matches!
+        loadEntries();
         setTimeout(() => {
             btn.innerHTML = originalText;
             btn.disabled = false;
@@ -262,41 +271,62 @@ async function triggerCheckFeeds() {
     }
 }
 
-async function loadHistory() {
+async function loadEntries() {
     try {
-        const res = await fetch('/api/history');
-        const history = await res.json();
-        renderHistory(history);
+        const res = await fetch('/api/entries');
+        const entries = await res.json();
+        renderEntries(entries);
     } catch (e) {
-        console.error("Error loading history", e);
+        console.error("Error loading entries", e);
     }
 }
 
-function renderHistory(history) {
-    const container = document.getElementById('historyContainer');
+function renderEntries(entries) {
+    const container = document.getElementById('entriesContainer');
+    const countBadge = document.getElementById('entriesCount');
     container.innerHTML = '';
-    
-    if (history.length === 0) {
-        container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 2rem;">No notification history yet.</p>';
+
+    if (entries.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 2rem;">No entries yet — run a feed check to populate.</p>';
+        countBadge.textContent = '';
         return;
     }
 
-    let html = '<div style="display: flex; flex-direction: column; gap: 1rem;">';
-    history.forEach(item => {
-        let displayTime = item.timestamp ? new Date(item.timestamp).toLocaleString() : 'Unknown Time';
+    countBadge.textContent = entries.length;
+
+    let html = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
+    let lastDate = null;
+
+    entries.forEach(item => {
+        const date = item.published_at ? new Date(item.published_at) : null;
+        const dateLabel = date ? date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : null;
+
+        if (dateLabel && dateLabel !== lastDate) {
+            html += `<div class="date-separator">${dateLabel}</div>`;
+            lastDate = dateLabel;
+        }
+
+        const timeStr = date ? date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : '';
+        const alertedClass = item.alerted ? ' entry-alerted' : '';
+        const alertBadge = item.alerted
+            ? `<span class="alert-badge"><i class="fa-solid fa-bell"></i> ${item.keyword}</span>`
+            : '';
+
         html += `
-            <div class="feed-item" style="border-left: 4px solid var(--primary);">
-                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">
-                    <i class="fa-regular fa-clock"></i> ${displayTime} 
-                    &bull; <span style="color: var(--primary); font-weight: 600;">Trigger: "${item.keyword}"</span> 
-                    &bull; Feed: ${item.feed_name || 'Unknown'}
+            <div class="feed-item${alertedClass}">
+                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+                    <span><i class="fa-regular fa-clock"></i> ${timeStr}</span>
+                    <span style="color: var(--text-secondary);">&bull;</span>
+                    <span style="color: var(--text-secondary);">${item.feed_name}</span>
+                    ${alertBadge}
                 </div>
-                <h3 style="margin-bottom: 0.25rem; font-size: 1.05rem;">
-                    <a href="${item.thread_url}" target="_blank" style="color: var(--text-primary); text-decoration: none;">${item.title || item.thread_url}</a>
-                </h3>
+                <div style="font-size: 1rem; font-weight: 600;">
+                    <a href="${item.url}" target="_blank" style="color: var(--text-primary); text-decoration: none;">${item.title || item.url}</a>
+                </div>
             </div>
         `;
     });
+
     html += '</div>';
     container.innerHTML = html;
 }

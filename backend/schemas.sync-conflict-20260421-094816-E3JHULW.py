@@ -29,42 +29,12 @@ class Keyword(KeywordBase):
 class FeedBase(BaseModel):
     name: str
     url: str
-    filter_target: str = "title"
 
 class FeedCreate(FeedBase):
     pass
-
-class FeedUpdate(BaseModel):
-    filter_target: str
 
 class Feed(FeedBase):
     id: int
     keywords: List[Keyword] = []
     class Config:
         from_attributes = True
-
-class HistoryBase(BaseModel):
-    thread_url: str
-    timestamp: str = ""
-    title: str = ""
-    feed_name: str = ""
-    keyword: str = ""
-
-class History(HistoryBase):
-    id: int
-    class Config:
-        from_attributes = True
-
-class RSSEntry(BaseModel):
-    id: int
-    feed_name: str
-    title: str
-    url: str
-    description: str
-    published_at: str
-    fetched_at: str
-    alerted: int
-    keyword: str
-    class Config:
-        from_attributes = True
-
