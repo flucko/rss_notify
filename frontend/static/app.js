@@ -56,10 +56,7 @@ async function handleSaveSettings(e) {
                 check_frequency_minutes: frequency
             })
         });
-        const msg = document.getElementById('settingsMsg');
-        msg.textContent = "Settings saved!";
-        msg.className = "msg success";
-        setTimeout(() => msg.textContent = "", 3000);
+        showMsg('settingsMsg', 'Settings saved!', 'success');
     } catch (e) {
         console.error("Error saving settings", e);
     }
@@ -67,33 +64,36 @@ async function handleSaveSettings(e) {
 
 async function testPushover() {
     const btn = document.getElementById('testPushoverBtn');
-    const msg = document.getElementById('settingsMsg');
-
     await handleSaveSettings(new Event('submit', {cancelable: true}));
 
-    const originalText = btn.innerHTML;
+    const originalHTML = btn.innerHTML;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
     btn.disabled = true;
 
     try {
         const res = await fetch('/api/test-pushover', { method: 'POST' });
         if (res.ok) {
-            msg.textContent = "Test notification sent!";
-            msg.className = "msg success";
+            showMsg('settingsMsg', 'Test notification sent!', 'success');
         } else {
             const err = await res.json();
-            msg.textContent = `Error: ${err.detail || 'Failed to send test'}`;
-            msg.className = "msg danger";
+            showMsg('settingsMsg', `Error: ${err.detail || 'Failed to send test'}`, 'error');
         }
     } catch (e) {
-        msg.textContent = "Failed to communicate with server.";
-        msg.className = "msg danger";
+        showMsg('settingsMsg', 'Failed to communicate with server.', 'error');
         console.error(e);
     } finally {
-        setTimeout(() => msg.textContent = "", 4000);
-        btn.innerHTML = originalText;
+        btn.innerHTML = originalHTML;
         btn.disabled = false;
     }
+}
+
+function showMsg(id, text, type) {
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.className = type === 'success'
+        ? 'mt-3 text-sm text-center text-green-600'
+        : 'mt-3 text-sm text-center text-red-600';
+    setTimeout(() => { el.textContent = ''; el.className = 'mt-3 text-sm text-center'; }, 4000);
 }
 
 async function loadFeeds() {
@@ -111,49 +111,58 @@ function renderFeeds(feeds) {
     container.innerHTML = '';
 
     if (feeds.length === 0) {
-        container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 2rem;">No feeds added yet.</p>';
+        container.innerHTML = '<p class="text-sm text-gray-500 dark:text-slate-400 text-center py-8">No feeds added yet.</p>';
         return;
     }
 
     feeds.forEach(feed => {
         const div = document.createElement('div');
-        div.className = 'feed-item';
+        div.className = 'bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl p-4';
 
-        let keywordsHTML = feed.keywords.map(kw => `
-            <span class="keyword-tag">
+        const keywordsHTML = feed.keywords.map(kw => `
+            <span class="inline-flex items-center gap-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-semibold px-2.5 py-1 rounded-full border border-blue-200 dark:border-blue-700">
                 ${kw.word}
-                <i class="fa-solid fa-xmark" onclick="deleteKeyword(${kw.id})"></i>
+                <i class="fa-solid fa-xmark cursor-pointer opacity-60 hover:opacity-100 hover:text-red-500 transition-colors" onclick="deleteKeyword(${kw.id})"></i>
             </span>
         `).join('');
 
-        let filterSelectHTML = `
-            <select onchange="updateFeedFilter(${feed.id}, this.value)" style="width: auto; padding: 0.25rem 0.5rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; background: rgba(0,0,0,0.3); font-size: 0.85rem;">
+        const filterSelectHTML = `
+            <select onchange="updateFeedFilter(${feed.id}, this.value)"
+                    class="border border-gray-300 dark:border-slate-600 rounded px-2 py-1 text-xs bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 outline-none focus:border-blue-600 transition-colors">
                 <option value="title" ${feed.filter_target === 'title' ? 'selected' : ''}>Title only</option>
                 <option value="description" ${feed.filter_target === 'description' ? 'selected' : ''}>Description only</option>
-                <option value="both" ${feed.filter_target === 'both' ? 'selected' : ''}>Title and Description</option>
+                <option value="both" ${feed.filter_target === 'both' ? 'selected' : ''}>Title &amp; Description</option>
             </select>
         `;
 
         div.innerHTML = `
-            <div class="feed-header">
-                <div class="feed-info">
-                    <h3>${feed.name}</h3>
-                    <p><a href="${feed.url}" target="_blank" style="color: var(--primary); text-decoration: none;">${feed.url}</a></p>
+            <div class="flex justify-between items-start mb-3">
+                <div>
+                    <h3 class="font-semibold text-gray-900 dark:text-slate-100 mb-0.5">${feed.name}</h3>
+                    <p class="text-xs text-gray-500 dark:text-slate-400">
+                        <a href="${feed.url}" target="_blank" class="text-blue-600 hover:underline">${feed.url}</a>
+                    </p>
                 </div>
-                <button class="btn danger" onclick="deleteFeed(${feed.id})" title="Delete Feed"><i class="fa-solid fa-trash"></i></button>
+                <button onclick="deleteFeed(${feed.id})" title="Delete feed"
+                        class="text-xs text-red-600 border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded px-2.5 py-1 transition-colors">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
             </div>
-
-            <div class="keywords-section">
-                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap;">
-                    <h4 style="margin: 0; color: var(--text-primary); font-size: 0.95rem;">Trigger words to exact match within the feed's</h4>
+            <div class="border-t border-gray-200 dark:border-slate-700 pt-3">
+                <div class="flex items-center gap-2 mb-2.5 flex-wrap">
+                    <span class="text-xs text-gray-600 dark:text-slate-400 font-medium">Trigger words to exact match within the feed's</span>
                     ${filterSelectHTML}
                 </div>
-                <form class="keyword-form" onsubmit="handleAddKeyword(event, ${feed.id})">
-                    <input type="text" id="kwInput-${feed.id}" placeholder="New trigger word..." required>
-                    <button type="submit" class="btn success"><i class="fa-solid fa-plus"></i></button>
+                <form class="flex gap-2 mb-2.5" onsubmit="handleAddKeyword(event, ${feed.id})">
+                    <input type="text" id="kwInput-${feed.id}" placeholder="New trigger word..." required
+                           class="input-field flex-1 py-1.5">
+                    <button type="submit"
+                            class="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg px-3 py-1.5 transition-colors">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
                 </form>
-                <div class="keywords-list">
-                    ${keywordsHTML || '<span style="font-size: 0.75rem; color: var(--text-secondary);">No trigger words yet. Add words to monitor this feed snippet.</span>'}
+                <div class="flex flex-wrap gap-1.5">
+                    ${keywordsHTML || '<span class="text-xs text-gray-400 dark:text-slate-500">No trigger words yet.</span>'}
                 </div>
             </div>
         `;
@@ -232,7 +241,7 @@ async function deleteKeyword(id) {
 async function triggerCheckFeeds() {
     const btn = document.getElementById('checkNowBtn');
     const originalHTML = btn.innerHTML;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm"></i>';
     btn.disabled = true;
 
     try {
@@ -242,23 +251,25 @@ async function triggerCheckFeeds() {
         if (data.previews) {
             let html = '';
             if (data.previews.length === 0) {
-                html = '<p>No feeds registered for preview.</p>';
+                html = '<p class="text-gray-500 dark:text-slate-400">No feeds registered for preview.</p>';
             } else {
                 data.previews.forEach(p => {
-                    html += `<h3>${p.feed_name}</h3>`;
+                    html += `<h3 class="font-semibold text-gray-900 dark:text-slate-100 mt-4 first:mt-0 mb-2">${p.feed_name}</h3>`;
                     if (p.entries.length === 0) {
-                        html += '<p>No entries found.</p>';
+                        html += '<p class="text-gray-500 dark:text-slate-400 text-sm">No entries found.</p>';
                     } else {
-                        html += `<ul style="list-style: none; padding: 0; margin-bottom: 1rem;">`;
+                        html += `<ul class="flex flex-col gap-2 mb-3">`;
                         p.entries.forEach(e => {
                             html += `
-                                <li style="border-bottom: 1px solid rgba(255,255,255,0.1); padding: 0.5rem 0;">
-                                    <strong>Title:</strong> <a href="${e.url}" target="_blank" style="color: var(--primary);">${e.title}</a><br/>
-                                    <strong>Description:</strong> <span style="font-size: 0.85em; opacity: 0.8;">${e.description ? e.description.substring(0, 500) + (e.description.length > 500 ? '...' : '') : '<i>No description</i>'}</span>
+                                <li class="border-b border-gray-100 dark:border-slate-700 pb-2">
+                                    <strong class="text-gray-700 dark:text-slate-300">Title:</strong>
+                                    <a href="${e.url}" target="_blank" class="text-blue-600 hover:underline ml-1">${e.title}</a><br>
+                                    <strong class="text-gray-700 dark:text-slate-300">Description:</strong>
+                                    <span class="text-xs text-gray-600 dark:text-slate-400 ml-1">${e.description ? e.description.substring(0, 500) + (e.description.length > 500 ? '...' : '') : '<i>No description</i>'}</span>
                                 </li>
                             `;
                         });
-                        html += `</ul>`;
+                        html += '</ul>';
                     }
                 });
             }
@@ -266,7 +277,7 @@ async function triggerCheckFeeds() {
             document.getElementById('previewModal').classList.add('active');
         }
 
-        btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+        btn.innerHTML = '<i class="fa-solid fa-check text-sm"></i>';
         loadEntries();
         setTimeout(() => {
             btn.innerHTML = originalHTML;
@@ -295,14 +306,14 @@ function renderEntries(entries) {
     container.innerHTML = '';
 
     if (entries.length === 0) {
-        container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 2rem;">No entries yet — run a feed check to populate.</p>';
+        container.innerHTML = '<p class="text-sm text-gray-500 dark:text-slate-400 text-center py-8">No entries yet — run a feed check to populate.</p>';
         countBadge.textContent = '';
         return;
     }
 
     countBadge.textContent = entries.length;
 
-    let html = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
+    let html = '<div class="flex flex-col gap-2">';
     let lastDate = null;
 
     entries.forEach(item => {
@@ -310,26 +321,30 @@ function renderEntries(entries) {
         const dateLabel = date ? date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : null;
 
         if (dateLabel && dateLabel !== lastDate) {
-            html += `<div class="date-separator">${dateLabel}</div>`;
+            html += `<div class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide pt-3 pb-1 border-b border-gray-100 dark:border-slate-700">${dateLabel}</div>`;
             lastDate = dateLabel;
         }
 
         const timeStr = date ? date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : '';
-        const alertedClass = item.alerted ? ' entry-alerted' : '';
+        const alertedClass = item.alerted
+            ? 'border-l-4 border-amber-400 bg-amber-50 dark:bg-amber-900/10'
+            : '';
         const alertBadge = item.alerted
-            ? `<span class="alert-badge"><i class="fa-solid fa-bell"></i> ${item.keyword}</span>`
+            ? `<span class="inline-flex items-center gap-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-semibold px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-700">
+                   <i class="fa-solid fa-bell"></i> ${item.keyword}
+               </span>`
             : '';
 
         html += `
-            <div class="feed-item${alertedClass}">
-                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+            <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-3 transition-colors ${alertedClass}">
+                <div class="text-xs text-gray-400 dark:text-slate-500 mb-1 flex items-center gap-1.5 flex-wrap">
                     <span><i class="fa-regular fa-clock"></i> ${timeStr}</span>
-                    <span style="color: var(--text-secondary);">&bull;</span>
-                    <span style="color: var(--text-secondary);">${item.feed_name}</span>
+                    <span>&bull;</span>
+                    <span>${item.feed_name}</span>
                     ${alertBadge}
                 </div>
-                <div style="font-size: 1rem; font-weight: 600;">
-                    <a href="${item.url}" target="_blank" style="color: var(--text-primary); text-decoration: none;">${item.title || item.url}</a>
+                <div class="text-sm font-semibold text-gray-900 dark:text-slate-100">
+                    <a href="${item.url}" target="_blank" class="hover:text-blue-600 transition-colors">${item.title || item.url}</a>
                 </div>
             </div>
         `;
