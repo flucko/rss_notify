@@ -1,8 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"
-      x-data="{ dark: localStorage.getItem('rss-dark') === 'true' }"
-      x-init="$watch('dark', v => localStorage.setItem('rss-dark', v))"
-      :class="{ 'dark': dark }">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,7 +13,6 @@
         }
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/static/style.css">
 </head>
@@ -32,8 +28,8 @@
             </div>
             <div class="flex items-center gap-2">
                 <!-- Dark mode toggle -->
-                <button @click="dark = !dark" class="icon-btn" title="Toggle dark mode">
-                    <i :class="dark ? 'fa-solid fa-sun' : 'fa-solid fa-moon'" class="text-sm"></i>
+                <button id="darkModeBtn" class="icon-btn" title="Toggle dark mode">
+                    <i id="darkModeIcon" class="fa-solid fa-moon text-sm"></i>
                 </button>
                 <button id="settingsBtn" class="icon-btn" title="Settings">
                     <i class="fa-solid fa-gear text-sm"></i>

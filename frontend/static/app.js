@@ -1,8 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
+    initDarkMode();
     loadSettings();
     loadFeeds();
     loadEntries();
 
+    document.getElementById('darkModeBtn').addEventListener('click', toggleDarkMode);
     document.getElementById('settingsForm').addEventListener('submit', handleSaveSettings);
     document.getElementById('addFeedForm').addEventListener('submit', handleAddFeed);
     document.getElementById('checkNowBtn').addEventListener('click', triggerCheckFeeds);
@@ -27,6 +29,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
+function initDarkMode() {
+    const isDark = document.documentElement.classList.contains('dark');
+    syncDarkIcon(isDark);
+}
+
+function toggleDarkMode() {
+    const isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('rss-dark', String(isDark));
+    syncDarkIcon(isDark);
+}
+
+function syncDarkIcon(isDark) {
+    document.getElementById('darkModeIcon').className =
+        isDark ? 'fa-solid fa-sun text-sm' : 'fa-solid fa-moon text-sm';
+}
 
 async function loadSettings() {
     try {
