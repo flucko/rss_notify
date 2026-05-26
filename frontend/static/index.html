@@ -11,33 +11,32 @@
 <body>
     <div class="background-mesh"></div>
     <div class="container">
+
         <header class="glass-panel header">
-            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                <div class="logo">
-                    <i class="fa-solid fa-rss-square fa-2x"></i>
-                    <h1>RSS Notify</h1>
-                </div>
-                <p style="color: var(--text-secondary); font-size: 0.9rem; max-width: 500px; margin-left: 2.5rem;">
-                    A lightweight containerized service that monitors RSS feeds and pushes instant device notifications whenever specific trigger words appear.
-                </p>
+            <div class="logo">
+                <i class="fa-solid fa-rss-square fa-xl"></i>
+                <h1>RSS Notify</h1>
             </div>
-            <button id="checkNowBtn" class="btn primary"><i class="fa-solid fa-rotate"></i> Check Feeds Now</button>
+            <div class="header-actions">
+                <button id="settingsBtn" class="btn-icon" title="Settings">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+                <button id="feedsBtn" class="btn-icon" title="Manage Feeds &amp; Keywords">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+                <button id="checkNowBtn" class="btn-icon" title="Check Feeds Now">
+                    <i class="fa-solid fa-rotate"></i>
+                </button>
+            </div>
         </header>
 
-        <!-- Preview Modal -->
-        <div id="previewModal" class="modal-overlay">
-            <div class="modal-content">
+        <!-- Settings Modal -->
+        <div id="settingsModal" class="modal-overlay">
+            <div class="modal-content modal-narrow">
                 <div class="modal-header">
-                    <h2><i class="fa-solid fa-eye"></i> Sync Preview Data</h2>
-                    <button class="btn danger" onclick="document.getElementById('previewModal').classList.remove('active')"><i class="fa-solid fa-xmark"></i> Close</button>
+                    <h2><i class="fa-solid fa-gear"></i> Settings</h2>
+                    <button class="btn-icon" id="closeSettingsBtn"><i class="fa-solid fa-xmark"></i></button>
                 </div>
-                <div id="previewContent"></div>
-            </div>
-        </div>
-
-        <div class="grid">
-            <aside class="glass-panel settings-panel">
-                <h2><i class="fa-solid fa-gear"></i> Settings</h2>
                 <form id="settingsForm">
                     <div class="form-group">
                         <label for="pushoverToken">Pushover App Token</label>
@@ -51,51 +50,55 @@
                         <label for="checkFrequency">Check Frequency (minutes)</label>
                         <input type="number" id="checkFrequency" min="1" max="1440" value="5" required>
                     </div>
-                    <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                    <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
                         <button type="submit" class="btn primary w-100"><i class="fa-solid fa-save"></i> Save</button>
                         <button type="button" id="testPushoverBtn" class="btn success w-100"><i class="fa-solid fa-bell"></i> Test</button>
                     </div>
                 </form>
                 <div id="settingsMsg" class="msg"></div>
-            </aside>
-
-            <main class="glass-panel feeds-panel">
-                <div class="panel-header collapsible-header" id="feedsPanelHeader">
-                    <h2><i class="fa-solid fa-list"></i> Keyword Setup</h2>
-                    <button class="btn-collapse" id="feedsToggleBtn" aria-expanded="false" title="Expand / collapse">
-                        <i class="fa-solid fa-chevron-down"></i>
-                    </button>
-                </div>
-
-                <div id="feedsPanelBody" class="collapsible-body" style="display:none;">
-                    <form id="addFeedForm" class="add-form">
-                        <input type="text" id="feedName" placeholder="Feed Name (e.g., Laptops)" required>
-                        <input type="url" id="feedUrl" placeholder="RSS URL (e.g., https://forums.redflagdeals.com/feed/forum/9)" required>
-                        <select id="feedFilterTarget" required>
-                            <option value="title">Match Trigger Words in Title</option>
-                            <option value="description">Match Trigger Words in Description</option>
-                            <option value="both">Match Trigger Words in Both</option>
-                        </select>
-                        <button type="submit" class="btn success"><i class="fa-solid fa-plus"></i> Add</button>
-                    </form>
-
-                    <div id="feedsContainer" class="feeds-list">
-                        <!-- Feeds will be rendered here dynamically -->
-                    </div>
-                </div>
-            </main>
+            </div>
         </div>
 
-        <div class="glass-panel entries-panel" style="margin-top: 2rem;">
+        <!-- Feeds & Keywords Modal -->
+        <div id="feedsModal" class="modal-overlay">
+            <div class="modal-content modal-wide">
+                <div class="modal-header">
+                    <h2><i class="fa-solid fa-list"></i> Feeds &amp; Keywords</h2>
+                    <button class="btn-icon" id="closeFeedsBtn"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <form id="addFeedForm" class="add-form">
+                    <input type="text" id="feedName" placeholder="Feed Name (e.g., Laptops)" required>
+                    <input type="url" id="feedUrl" placeholder="RSS URL (e.g., https://forums.redflagdeals.com/feed/forum/9)" required>
+                    <select id="feedFilterTarget" required>
+                        <option value="title">Match Trigger Words in Title</option>
+                        <option value="description">Match Trigger Words in Description</option>
+                        <option value="both">Match Trigger Words in Both</option>
+                    </select>
+                    <button type="submit" class="btn success"><i class="fa-solid fa-plus"></i> Add</button>
+                </form>
+                <div id="feedsContainer" class="feeds-list"></div>
+            </div>
+        </div>
+
+        <!-- Preview Modal -->
+        <div id="previewModal" class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fa-solid fa-eye"></i> Sync Preview Data</h2>
+                    <button class="btn-icon" onclick="document.getElementById('previewModal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div id="previewContent"></div>
+            </div>
+        </div>
+
+        <div class="glass-panel entries-panel">
             <div class="panel-header">
                 <h2><i class="fa-solid fa-newspaper"></i> Feed Activity <span id="entriesCount" class="count-badge"></span></h2>
             </div>
-            <div id="entriesContainer" class="entries-list">
-                <!-- Entries will be rendered here dynamically -->
-            </div>
+            <div id="entriesContainer" class="entries-list"></div>
         </div>
-    </div>
 
+    </div>
     <script src="/static/app.js"></script>
 </body>
 </html>

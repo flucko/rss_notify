@@ -8,15 +8,23 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('checkNowBtn').addEventListener('click', triggerCheckFeeds);
     document.getElementById('testPushoverBtn').addEventListener('click', testPushover);
 
-    // Collapsible keyword setup panel
-    document.getElementById('feedsPanelHeader').addEventListener('click', (e) => {
-        if (e.target.closest('button') && !e.target.closest('#feedsToggleBtn')) return;
-        const body = document.getElementById('feedsPanelBody');
-        const btn = document.getElementById('feedsToggleBtn');
-        const expanded = body.style.display !== 'none';
-        body.style.display = expanded ? 'none' : 'block';
-        btn.setAttribute('aria-expanded', String(!expanded));
-        btn.querySelector('i').className = expanded ? 'fa-solid fa-chevron-down' : 'fa-solid fa-chevron-up';
+    // Settings modal
+    document.getElementById('settingsBtn').addEventListener('click', () =>
+        document.getElementById('settingsModal').classList.add('active'));
+    document.getElementById('closeSettingsBtn').addEventListener('click', () =>
+        document.getElementById('settingsModal').classList.remove('active'));
+
+    // Feeds modal
+    document.getElementById('feedsBtn').addEventListener('click', () =>
+        document.getElementById('feedsModal').classList.add('active'));
+    document.getElementById('closeFeedsBtn').addEventListener('click', () =>
+        document.getElementById('feedsModal').classList.remove('active'));
+
+    // Close any modal on backdrop click
+    ['settingsModal', 'feedsModal', 'previewModal'].forEach(id => {
+        document.getElementById(id).addEventListener('click', (e) => {
+            if (e.target.id === id) document.getElementById(id).classList.remove('active');
+        });
     });
 });
 
@@ -223,8 +231,8 @@ async function deleteKeyword(id) {
 
 async function triggerCheckFeeds() {
     const btn = document.getElementById('checkNowBtn');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking...';
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
     btn.disabled = true;
 
     try {
@@ -258,15 +266,15 @@ async function triggerCheckFeeds() {
             document.getElementById('previewModal').classList.add('active');
         }
 
-        btn.innerHTML = '<i class="fa-solid fa-check"></i> Check Complete';
+        btn.innerHTML = '<i class="fa-solid fa-check"></i>';
         loadEntries();
         setTimeout(() => {
-            btn.innerHTML = originalText;
+            btn.innerHTML = originalHTML;
             btn.disabled = false;
         }, 2000);
     } catch (e) {
         console.error("Error triggering check", e);
-        btn.innerHTML = originalText;
+        btn.innerHTML = originalHTML;
         btn.disabled = false;
     }
 }
