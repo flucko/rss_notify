@@ -84,6 +84,8 @@ def check_feeds(manual_sync=False):
                         published_at = time.strftime('%Y-%m-%dT%H:%M:%SZ', pub)
                     else:
                         published_at = datetime.utcnow().isoformat() + "Z"
+                    company_match = re.search(r'\[([^\]]+)\]', title)
+                    company = company_match.group(1) if company_match else ""
                     db.add(RSSEntry(
                         feed_name=feed.name,
                         title=title,
@@ -92,7 +94,8 @@ def check_feeds(manual_sync=False):
                         published_at=published_at,
                         fetched_at=datetime.utcnow().isoformat() + "Z",
                         alerted=0,
-                        keyword=""
+                        keyword="",
+                        company=company
                     ))
                     db.commit()
 

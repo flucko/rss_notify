@@ -10,8 +10,9 @@ from backend.logging_config import setup_logging
 from backend import models, schemas
 from backend.database import engine, get_db, SessionLocal, db_path
 from backend.rss_checker import check_feeds
+import re
 import requests
-from sqlalchemy import text
+from sqlalchemy import text, func
 
 # Initialize logging before anything else
 setup_logging()
@@ -43,6 +44,23 @@ with engine.connect() as conn:
         conn.execute(text("ALTER TABLE history ADD COLUMN feed_name VARCHAR DEFAULT ''"))
         conn.execute(text("ALTER TABLE history ADD COLUMN keyword VARCHAR DEFAULT ''"))
         conn.commit()
+
+    try:
+        conn.execute(text("SELECT company FROM rss_entries LIMIT 1"))
+    except Exception:
+        logger.info("Migrating database: adding 'company' column to rss_entries")
+        conn.execute(text("ALTER TABLE rss_entries ADD COLUMN company VARCHAR DEFAULT ''"))
+        # Backfill company from [Tag] patterns in existing titles
+        rows = conn.execute(text("SELECT id, title FROM rss_entries")).fetchall()
+        for row in rows:
+            m = re.search(r'\[([^\]]+)\]', row.title or '')
+            if m:
+                conn.execute(
+                    text("UPDATE rss_entries SET company = :company WHERE id = :id"),
+                    {"company": m.group(1), "id": row.id}
+                )
+        conn.commit()
+        logger.info("Backfilled company column from entry titles")
 
 scheduler = BackgroundScheduler()
 
@@ -238,6 +256,35 @@ def trigger_check():
     logger.info("Manual feed check triggered via API")
     previews = check_feeds(manual_sync=True)
     return {"status": "success", "previews": previews}
+
+@app.get("/api/companies", response_model=list[schemas.CompanyInfo])
+def get_companies(db: Session = Depends(get_db)):
+    from datetime import datetime, timedelta
+    cutoff = (datetime.utcnow() - timedelta(days=7)).isoformat() + "Z"
+    rows = (
+        db.query(models.RSSEntry.company, func.count(models.RSSEntry.id).label("count"))
+        .filter(models.RSSEntry.published_at >= cutoff)
+        .filter(models.RSSEntry.company != "")
+        .group_by(models.RSSEntry.company)
+        .order_by(func.count(models.RSSEntry.id).desc())
+        .all()
+    )
+    favorites = {fc.name for fc in db.query(models.FavoriteCompany).all()}
+    return [{"name": r.company, "count": r.count, "is_favorite": r.company in favorites} for r in rows]
+
+@app.post("/api/companies/{name}/favorite")
+def toggle_favorite_company(name: str, db: Session = Depends(get_db)):
+    existing = db.query(models.FavoriteCompany).filter(models.FavoriteCompany.name == name).first()
+    if existing:
+        db.delete(existing)
+        db.commit()
+        logger.info(f"Company removed from favorites: \"{name}\"")
+        return {"is_favorite": False}
+    fc = models.FavoriteCompany(name=name)
+    db.add(fc)
+    db.commit()
+    logger.info(f"Company added to favorites: \"{name}\"")
+    return {"is_favorite": True}
 
 @app.get("/api/history", response_model=list[schemas.History])
 def get_history(db: Session = Depends(get_db)):

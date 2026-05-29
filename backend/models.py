@@ -46,3 +46,9 @@ class RSSEntry(Base):
     fetched_at = Column(String, default="")
     alerted = Column(Integer, default=0)
     keyword = Column(String, default="")
+    company = Column(String, index=True, default="")
+
+class FavoriteCompany(Base):
+    __tablename__ = "favorite_companies"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)

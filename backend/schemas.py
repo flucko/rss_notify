@@ -65,6 +65,12 @@ class RSSEntry(BaseModel):
     fetched_at: str
     alerted: int
     keyword: str
+    company: str
     class Config:
         from_attributes = True
+
+class CompanyInfo(BaseModel):
+    name: str
+    count: int
+    is_favorite: bool
 
