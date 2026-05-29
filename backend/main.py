@@ -127,8 +127,11 @@ app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
 
 @app.get("/")
 def read_root():
-    # Serve index.html
     return FileResponse("frontend/static/index.html")
+
+@app.get("/favorites")
+def read_favorites():
+    return FileResponse("frontend/static/favorites.html")
 
 # --- API Routes ---
 
@@ -258,7 +261,7 @@ def trigger_check():
     return {"status": "success", "previews": previews}
 
 @app.get("/api/companies", response_model=list[schemas.CompanyInfo])
-def get_companies(db: Session = Depends(get_db)):
+def get_companies(all_favorites: bool = False, db: Session = Depends(get_db)):
     from datetime import datetime, timedelta
     cutoff = (datetime.utcnow() - timedelta(days=7)).isoformat() + "Z"
     rows = (
@@ -270,7 +273,13 @@ def get_companies(db: Session = Depends(get_db)):
         .all()
     )
     favorites = {fc.name for fc in db.query(models.FavoriteCompany).all()}
-    return [{"name": r.company, "count": r.count, "is_favorite": r.company in favorites} for r in rows]
+    seen = {r.company for r in rows}
+    result = [{"name": r.company, "count": r.count, "is_favorite": r.company in favorites} for r in rows]
+    if all_favorites:
+        # Include favorited companies that have no entries in the current 7-day window
+        for name in sorted(favorites - seen):
+            result.append({"name": name, "count": 0, "is_favorite": True})
+    return result
 
 @app.post("/api/companies/{name}/favorite")
 def toggle_favorite_company(name: str, db: Session = Depends(get_db)):

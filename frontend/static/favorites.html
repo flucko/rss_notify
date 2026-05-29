@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Favorite Selection — RSS Notify</title>
+    <script>if (localStorage.getItem('rss-dark') === 'true') document.documentElement.classList.add('dark');</script>
+    <script>tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['system-ui', 'sans-serif'] } } } }</script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/theme.css">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="min-h-screen font-sans">
+
+    <!-- Navigation bar -->
+    <nav class="nav-bar">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6">
+            <div class="flex justify-between h-14 items-center">
+                <div class="flex items-center gap-6">
+                    <div class="flex items-center gap-2.5">
+                        <i class="fa-solid fa-rss-square text-blue-600 text-lg"></i>
+                        <span class="text-lg font-semibold tracking-tight">RSS Notify</span>
+                    </div>
+                    <div class="flex gap-4 text-sm">
+                        <a href="/" class="nav-link">Feed</a>
+                        <a href="/favorites" class="nav-link active">Favorite Selection</a>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="darkModeBtn" class="theme-btn" title="Toggle dark mode">
+                        <i class="fa-solid fa-sun dark-sun" style="width:1rem;height:1rem;"></i>
+                        <i class="fa-solid fa-moon dark-moon" style="width:1rem;height:1rem;"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-4">
+
+        <!-- Header card -->
+        <div class="card">
+            <div class="flex items-center gap-2.5 mb-1">
+                <i class="fa-solid fa-star text-amber-400"></i>
+                <h1 class="text-lg font-semibold">Favorite Selection</h1>
+            </div>
+            <p class="text-sm" style="color:var(--color-text-muted)">
+                Mark companies to highlight their entries and filter the feed on the main page.
+            </p>
+        </div>
+
+        <!-- Companies list -->
+        <div id="companiesContainer">
+            <div class="card">
+                <p class="text-sm text-center py-6" style="color:var(--color-text-muted)">
+                    <i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading...
+                </p>
+            </div>
+        </div>
+
+    </main>
+
+    <script src="/static/favorites.js"></script>
+</body>
+</html>

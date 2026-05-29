@@ -17,9 +17,15 @@
     <nav class="nav-bar">
         <div class="max-w-6xl mx-auto px-4 sm:px-6">
             <div class="flex justify-between h-14 items-center">
-                <div class="flex items-center gap-2.5">
-                    <i class="fa-solid fa-rss-square text-blue-600 text-lg"></i>
-                    <span class="text-lg font-semibold tracking-tight">RSS Notify</span>
+                <div class="flex items-center gap-6">
+                    <div class="flex items-center gap-2.5">
+                        <i class="fa-solid fa-rss-square text-blue-600 text-lg"></i>
+                        <span class="text-lg font-semibold tracking-tight">RSS Notify</span>
+                    </div>
+                    <div class="flex gap-4 text-sm">
+                        <a href="/" class="nav-link active">Feed</a>
+                        <a href="/favorites" class="nav-link">Favorite Selection</a>
+                    </div>
                 </div>
                 <div class="flex items-center gap-2">
                     <button id="darkModeBtn" class="theme-btn" title="Toggle dark mode">
@@ -117,9 +123,17 @@
             </div>
         </div>
 
-        <!-- Company Filter Bar (hidden until companies load) -->
-        <div id="companyFilterBar" class="card" style="padding:0.625rem 1rem;display:none;">
-            <div class="flex items-center gap-2 flex-wrap" id="companyPills"></div>
+        <!-- Feed mode toggle -->
+        <div class="card" style="padding:0.625rem 1.25rem">
+            <div class="flex items-center gap-3 flex-wrap">
+                <div class="mode-toggle">
+                    <button class="mode-btn active" id="modeAll" onclick="setFeedMode('all')">All</button>
+                    <button class="mode-btn" id="modeFavorites" onclick="setFeedMode('favorites')">
+                        <i class="fa-solid fa-star text-xs mr-1"></i>Favorites
+                    </button>
+                </div>
+                <div id="favoriteCompanyPills" class="flex items-center gap-2 flex-wrap" style="display:none"></div>
+            </div>
         </div>
 
         <!-- Feed Activity -->

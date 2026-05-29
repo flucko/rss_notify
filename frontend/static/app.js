@@ -1,6 +1,7 @@
 let allEntries = [];
 let allCompanies = [];
 let activeCompany = null;
+let feedMode = 'all';
 
 document.addEventListener('DOMContentLoaded', () => {
     initDarkMode();
@@ -311,7 +312,7 @@ async function loadEntries() {
     try {
         const res = await fetch('/api/entries');
         allEntries = await res.json();
-        renderEntries(allEntries);
+        applyFilters();
     } catch (e) {
         console.error("Error loading entries", e);
     }
@@ -321,58 +322,59 @@ async function loadCompanies() {
     try {
         const res = await fetch('/api/companies');
         allCompanies = await res.json();
-        renderCompanyFilter();
+        if (feedMode === 'favorites') renderFavoriteCompanyPills();
+        applyFilters();
     } catch (e) {
         console.error("Error loading companies", e);
     }
 }
 
-function renderCompanyFilter() {
-    const bar = document.getElementById('companyFilterBar');
-    const container = document.getElementById('companyPills');
-    if (allCompanies.length === 0) { bar.style.display = 'none'; return; }
-
-    bar.style.display = '';
-    const pills = [{ name: null, label: 'All', count: allEntries.length, is_favorite: false }, ...allCompanies];
-
-    container.innerHTML = pills.map(c => {
-        const isActive = activeCompany === c.name;
-        const isFav = c.is_favorite;
-        const label = c.name || c.label;
-        const count = c.name ? c.count : allEntries.length;
-        const starClass = isFav ? 'pill-star lit' : 'pill-star';
-        const starClick = c.name ? `onclick="toggleFavorite('${c.name.replace(/'/g,"\\'")}', event)"` : '';
-        const pillClasses = ['company-pill', isActive ? 'active' : '', isFav ? 'is-favorite' : ''].filter(Boolean).join(' ');
-        return `
-            <button class="${pillClasses}" onclick="setCompanyFilter(${c.name ? `'${c.name.replace(/'/g,"\\'")}' ` : 'null'})">
-                ${label}
-                <span class="pill-count">${count}</span>
-                ${c.name ? `<span class="${starClass}" ${starClick} title="${isFav ? 'Remove from favorites' : 'Add to favorites'}">★</span>` : ''}
-            </button>`;
-    }).join('');
+function setFeedMode(mode) {
+    feedMode = mode;
+    activeCompany = null;
+    document.getElementById('modeAll').classList.toggle('active', mode === 'all');
+    document.getElementById('modeFavorites').classList.toggle('active', mode === 'favorites');
+    const pillsEl = document.getElementById('favoriteCompanyPills');
+    if (mode === 'favorites') {
+        pillsEl.style.display = '';
+        renderFavoriteCompanyPills();
+    } else {
+        pillsEl.style.display = 'none';
+    }
+    applyFilters();
 }
 
-function setCompanyFilter(company) {
-    activeCompany = company;
-    renderCompanyFilter();
-    const filtered = company ? allEntries.filter(e => e.company === company) : allEntries;
+function setActiveCompany(name) {
+    activeCompany = name;
+    renderFavoriteCompanyPills();
+    applyFilters();
+}
+
+function applyFilters() {
+    let filtered = allEntries;
+    if (feedMode === 'favorites') {
+        const favNames = new Set(allCompanies.filter(c => c.is_favorite).map(c => c.name));
+        filtered = allEntries.filter(e => favNames.has(e.company));
+        if (activeCompany) filtered = filtered.filter(e => e.company === activeCompany);
+    }
     renderEntries(filtered);
 }
 
-async function toggleFavorite(name, event) {
-    event.stopPropagation();
-    try {
-        const res = await fetch(`/api/companies/${encodeURIComponent(name)}/favorite`, { method: 'POST' });
-        const data = await res.json();
-        const c = allCompanies.find(c => c.name === name);
-        if (c) c.is_favorite = data.is_favorite;
-        renderCompanyFilter();
-        // Re-render entries so favorite highlights update
-        const filtered = activeCompany ? allEntries.filter(e => e.company === activeCompany) : allEntries;
-        renderEntries(filtered);
-    } catch (e) {
-        console.error("Error toggling favorite", e);
+function renderFavoriteCompanyPills() {
+    const container = document.getElementById('favoriteCompanyPills');
+    const favs = allCompanies.filter(c => c.is_favorite);
+    if (favs.length === 0) {
+        container.innerHTML = `<span class="text-xs" style="color:var(--color-text-muted)">No favorites yet — <a href="/favorites" style="color:var(--color-accent)">add some</a></span>`;
+        return;
     }
+    const total = favs.reduce((s, c) => s + c.count, 0);
+    const allPill = `<button class="company-pill${activeCompany === null ? ' active' : ''}" onclick="setActiveCompany(null)">All Favorites <span class="pill-count">${total}</span></button>`;
+    const pills = favs.map(c =>
+        `<button class="company-pill is-favorite${activeCompany === c.name ? ' active' : ''}" onclick="setActiveCompany('${c.name.replace(/'/g,"\\'")}')">
+            ${c.name} <span class="pill-count">${c.count}</span>
+        </button>`
+    ).join('');
+    container.innerHTML = allPill + pills;
 }
 
 function renderEntries(entries) {
@@ -381,7 +383,10 @@ function renderEntries(entries) {
     container.innerHTML = '';
 
     if (entries.length === 0) {
-        container.innerHTML = '<p class="text-sm text-center py-8" style="color:var(--color-text-muted)">No entries yet — run a feed check to populate.</p>';
+        const msg = feedMode === 'favorites'
+            ? `No entries from your favorite companies in the last 7 days. <a href="/favorites" style="color:var(--color-accent)">Manage favorites</a>`
+            : 'No entries yet — run a feed check to populate.';
+        container.innerHTML = `<p class="text-sm text-center py-8" style="color:var(--color-text-muted)">${msg}</p>`;
         countBadge.textContent = '';
         return;
     }
@@ -403,7 +408,6 @@ function renderEntries(entries) {
         const timeStr = date ? date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : '';
         const isFavCompany = item.company && allCompanies.some(c => c.name === item.company && c.is_favorite);
         const entryClasses = ['card', item.alerted ? 'entry-alerted' : (isFavCompany ? 'entry-favorite' : '')].filter(Boolean).join(' ');
-        const alertedClass = item.alerted ? 'entry-alerted' : '';
         const alertBadge = item.alerted
             ? `<span class="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full"
                     style="background:#fef3c7;color:#92400e;border:1px solid #fde68a">
@@ -412,9 +416,7 @@ function renderEntries(entries) {
             : '';
 
         const companyBadge = item.company
-            ? `<span class="text-xs px-1.5 py-0.5 rounded cursor-pointer hover:opacity-80 transition-opacity"
-                    style="background:var(--color-bg-subtle);color:var(--color-text-muted);border:1px solid var(--color-border)"
-                    onclick="setCompanyFilter('${item.company.replace(/'/g,"\\'")}')">[${item.company}]</span>`
+            ? `<span class="text-xs px-1.5 py-0.5 rounded" style="background:var(--color-bg-subtle);color:var(--color-text-muted);border:1px solid var(--color-border)">[${item.company}]</span>`
             : '';
 
         html += `
