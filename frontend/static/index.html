@@ -4,69 +4,68 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RSS Notify</title>
-    <!-- Prevent dark-mode flash -->
     <script>if (localStorage.getItem('rss-dark') === 'true') document.documentElement.classList.add('dark');</script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: { extend: { fontFamily: { sans: ['system-ui', 'sans-serif'] } } }
-        }
-    </script>
+    <script>tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['system-ui', 'sans-serif'] } } } }</script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/theme.css">
     <link rel="stylesheet" href="/static/style.css">
 </head>
-<body class="bg-gray-50 dark:bg-slate-950 min-h-screen text-gray-900 dark:text-slate-100 font-sans">
+<body class="min-h-screen font-sans">
 
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-4">
+    <!-- Navigation bar -->
+    <nav class="nav-bar">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6">
+            <div class="flex justify-between h-14 items-center">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-rss-square text-blue-600 text-lg"></i>
+                    <span class="text-lg font-semibold tracking-tight">RSS Notify</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="darkModeBtn" class="theme-btn" title="Toggle dark mode">
+                        <i class="fa-solid fa-sun dark-sun" style="width:1rem;height:1rem;"></i>
+                        <i class="fa-solid fa-moon dark-moon" style="width:1rem;height:1rem;"></i>
+                    </button>
+                    <button id="settingsBtn" class="icon-btn" title="Settings">
+                        <i class="fa-solid fa-gear text-sm"></i>
+                    </button>
+                    <button id="feedsBtn" class="icon-btn" title="Manage Feeds &amp; Keywords">
+                        <i class="fa-solid fa-plus text-sm"></i>
+                    </button>
+                    <button id="checkNowBtn" class="icon-btn" title="Check Feeds Now">
+                        <i class="fa-solid fa-rotate text-sm"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
 
-        <!-- Header -->
-        <header class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-5 py-3 flex items-center justify-between shadow-sm">
-            <div class="flex items-center gap-2.5 text-blue-600">
-                <i class="fa-solid fa-rss-square text-lg"></i>
-                <span class="text-lg font-semibold text-gray-900 dark:text-slate-100 tracking-tight">RSS Notify</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <!-- Dark mode toggle -->
-                <button id="darkModeBtn" class="icon-btn" title="Toggle dark mode">
-                    <i id="darkModeIcon" class="fa-solid fa-moon text-sm"></i>
-                </button>
-                <button id="settingsBtn" class="icon-btn" title="Settings">
-                    <i class="fa-solid fa-gear text-sm"></i>
-                </button>
-                <button id="feedsBtn" class="icon-btn" title="Manage Feeds &amp; Keywords">
-                    <i class="fa-solid fa-plus text-sm"></i>
-                </button>
-                <button id="checkNowBtn" class="icon-btn" title="Check Feeds Now">
-                    <i class="fa-solid fa-rotate text-sm"></i>
-                </button>
-            </div>
-        </header>
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-4">
 
         <!-- Settings Modal -->
         <div id="settingsModal" class="modal-overlay fixed inset-0 bg-black/50 backdrop-blur-sm z-50 items-center justify-center">
-            <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 w-full max-w-md mx-4 p-6 max-h-[85vh] overflow-y-auto shadow-xl">
-                <div class="flex items-center justify-between mb-5 pb-3 border-b border-gray-200 dark:border-slate-700">
-                    <h2 class="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-slate-100">
+            <div class="modal-panel w-full max-w-md mx-4 max-h-[85vh] overflow-y-auto">
+                <div class="flex items-center justify-between mb-5 pb-3" style="border-bottom: 1px solid var(--color-border)">
+                    <h2 class="text-lg font-semibold flex items-center gap-2">
                         <i class="fa-solid fa-gear text-blue-600"></i> Settings
                     </h2>
                     <button id="closeSettingsBtn" class="icon-btn"><i class="fa-solid fa-xmark text-sm"></i></button>
                 </div>
                 <form id="settingsForm">
                     <div class="mb-4">
-                        <label class="block text-sm text-gray-500 dark:text-slate-400 mb-1.5" for="pushoverToken">Pushover App Token</label>
+                        <label class="block text-sm mb-1.5" style="color: var(--color-text-muted)" for="pushoverToken">Pushover App Token</label>
                         <input type="password" id="pushoverToken" placeholder="Application Token" required class="input-field">
                     </div>
                     <div class="mb-4">
-                        <label class="block text-sm text-gray-500 dark:text-slate-400 mb-1.5" for="pushoverUserKey">Pushover User Key</label>
+                        <label class="block text-sm mb-1.5" style="color: var(--color-text-muted)" for="pushoverUserKey">Pushover User Key</label>
                         <input type="password" id="pushoverUserKey" placeholder="User Key" required class="input-field">
                     </div>
                     <div class="mb-4">
-                        <label class="block text-sm text-gray-500 dark:text-slate-400 mb-1.5" for="checkFrequency">Check Frequency (minutes)</label>
+                        <label class="block text-sm mb-1.5" style="color: var(--color-text-muted)" for="checkFrequency">Check Frequency (minutes)</label>
                         <input type="number" id="checkFrequency" min="1" max="1440" value="5" required class="input-field">
                     </div>
                     <div class="flex gap-2 mt-5">
-                        <button type="submit" class="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-lg px-4 py-2 transition-colors">
+                        <button type="submit" class="btn-primary flex-1 flex items-center justify-center gap-2">
                             <i class="fa-solid fa-save"></i> Save
                         </button>
                         <button type="button" id="testPushoverBtn" class="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold text-sm rounded-lg px-4 py-2 transition-colors">
@@ -80,14 +79,14 @@
 
         <!-- Feeds & Keywords Modal -->
         <div id="feedsModal" class="modal-overlay fixed inset-0 bg-black/50 backdrop-blur-sm z-50 items-center justify-center">
-            <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 w-full max-w-4xl mx-4 p-6 max-h-[85vh] overflow-y-auto shadow-xl">
-                <div class="flex items-center justify-between mb-5 pb-3 border-b border-gray-200 dark:border-slate-700">
-                    <h2 class="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-slate-100">
+            <div class="modal-panel w-full max-w-4xl mx-4 max-h-[85vh] overflow-y-auto">
+                <div class="flex items-center justify-between mb-5 pb-3" style="border-bottom: 1px solid var(--color-border)">
+                    <h2 class="text-lg font-semibold flex items-center gap-2">
                         <i class="fa-solid fa-list text-blue-600"></i> Feeds &amp; Keywords
                     </h2>
                     <button id="closeFeedsBtn" class="icon-btn"><i class="fa-solid fa-xmark text-sm"></i></button>
                 </div>
-                <form id="addFeedForm" class="grid grid-cols-1 sm:grid-cols-[1fr_2fr_auto_auto] gap-2 mb-5 bg-gray-50 dark:bg-slate-900 p-3 rounded-xl border border-gray-200 dark:border-slate-700">
+                <form id="addFeedForm" class="grid grid-cols-1 sm:grid-cols-[1fr_2fr_auto_auto] gap-2 mb-5 p-3 rounded-xl" style="background: var(--color-bg-subtle); border: 1px solid var(--color-border)">
                     <input type="text" id="feedName" placeholder="Feed Name (e.g., Laptops)" required class="input-field">
                     <input type="url" id="feedUrl" placeholder="RSS URL" required class="input-field">
                     <select id="feedFilterTarget" required class="input-field">
@@ -105,30 +104,31 @@
 
         <!-- Preview Modal -->
         <div id="previewModal" class="modal-overlay fixed inset-0 bg-black/50 backdrop-blur-sm z-50 items-center justify-center">
-            <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 w-full max-w-3xl mx-4 p-6 max-h-[85vh] overflow-y-auto shadow-xl">
-                <div class="flex items-center justify-between mb-5 pb-3 border-b border-gray-200 dark:border-slate-700">
-                    <h2 class="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-slate-100">
+            <div class="modal-panel w-full max-w-3xl mx-4 max-h-[85vh] overflow-y-auto">
+                <div class="flex items-center justify-between mb-5 pb-3" style="border-bottom: 1px solid var(--color-border)">
+                    <h2 class="text-lg font-semibold flex items-center gap-2">
                         <i class="fa-solid fa-eye text-blue-600"></i> Sync Preview
                     </h2>
                     <button onclick="document.getElementById('previewModal').classList.remove('active')" class="icon-btn">
                         <i class="fa-solid fa-xmark text-sm"></i>
                     </button>
                 </div>
-                <div id="previewContent" class="text-sm text-gray-700 dark:text-slate-300"></div>
+                <div id="previewContent" class="text-sm" style="color: var(--color-text-sec)"></div>
             </div>
         </div>
 
         <!-- Feed Activity -->
-        <div class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
-            <div class="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200 dark:border-slate-700">
+        <div class="card">
+            <div class="flex items-center gap-2 mb-4 pb-3" style="border-bottom: 1px solid var(--color-border)">
                 <i class="fa-solid fa-newspaper text-blue-600"></i>
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-slate-100">Feed Activity</h2>
-                <span id="entriesCount" class="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full font-semibold"></span>
+                <h2 class="text-lg font-semibold">Feed Activity</h2>
+                <span id="entriesCount" class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold"></span>
             </div>
             <div id="entriesContainer" class="flex flex-col"></div>
         </div>
 
-    </div>
+    </main>
+
     <script src="/static/app.js"></script>
 </body>
 </html>

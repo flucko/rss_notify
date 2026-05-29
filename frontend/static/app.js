@@ -31,19 +31,12 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initDarkMode() {
-    const isDark = document.documentElement.classList.contains('dark');
-    syncDarkIcon(isDark);
+    // Icon visibility is handled by CSS .dark-sun / .dark-moon classes
 }
 
 function toggleDarkMode() {
     const isDark = document.documentElement.classList.toggle('dark');
     localStorage.setItem('rss-dark', String(isDark));
-    syncDarkIcon(isDark);
-}
-
-function syncDarkIcon(isDark) {
-    document.getElementById('darkModeIcon').className =
-        isDark ? 'fa-solid fa-sun text-sm' : 'fa-solid fa-moon text-sm';
 }
 
 async function loadSettings() {
@@ -129,16 +122,17 @@ function renderFeeds(feeds) {
     container.innerHTML = '';
 
     if (feeds.length === 0) {
-        container.innerHTML = '<p class="text-sm text-gray-500 dark:text-slate-400 text-center py-8">No feeds added yet.</p>';
+        container.innerHTML = '<p class="text-sm text-center py-8" style="color:var(--color-text-muted)">No feeds added yet.</p>';
         return;
     }
 
     feeds.forEach(feed => {
         const div = document.createElement('div');
-        div.className = 'bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl p-4';
+        div.className = 'card';
 
         const keywordsHTML = feed.keywords.map(kw => `
-            <span class="inline-flex items-center gap-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-semibold px-2.5 py-1 rounded-full border border-blue-200 dark:border-blue-700">
+            <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full"
+                  style="background:var(--color-accent-bg);color:var(--color-accent);border:1px solid var(--color-accent-ring)">
                 ${kw.word}
                 <i class="fa-solid fa-xmark cursor-pointer opacity-60 hover:opacity-100 hover:text-red-500 transition-colors" onclick="deleteKeyword(${kw.id})"></i>
             </span>
@@ -146,7 +140,7 @@ function renderFeeds(feeds) {
 
         const filterSelectHTML = `
             <select onchange="updateFeedFilter(${feed.id}, this.value)"
-                    class="border border-gray-300 dark:border-slate-600 rounded px-2 py-1 text-xs bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 outline-none focus:border-blue-600 transition-colors">
+                    class="input-field" style="width:auto;padding:0.25rem 0.5rem;font-size:0.75rem;">
                 <option value="title" ${feed.filter_target === 'title' ? 'selected' : ''}>Title only</option>
                 <option value="description" ${feed.filter_target === 'description' ? 'selected' : ''}>Description only</option>
                 <option value="both" ${feed.filter_target === 'both' ? 'selected' : ''}>Title &amp; Description</option>
@@ -156,31 +150,30 @@ function renderFeeds(feeds) {
         div.innerHTML = `
             <div class="flex justify-between items-start mb-3">
                 <div>
-                    <h3 class="font-semibold text-gray-900 dark:text-slate-100 mb-0.5">${feed.name}</h3>
-                    <p class="text-xs text-gray-500 dark:text-slate-400">
+                    <h3 class="font-semibold mb-0.5">${feed.name}</h3>
+                    <p class="text-xs" style="color:var(--color-text-muted)">
                         <a href="${feed.url}" target="_blank" class="text-blue-600 hover:underline">${feed.url}</a>
                     </p>
                 </div>
-                <button onclick="deleteFeed(${feed.id})" title="Delete feed"
-                        class="text-xs text-red-600 border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded px-2.5 py-1 transition-colors">
+                <button onclick="deleteFeed(${feed.id})" title="Delete feed" class="btn-danger btn-sm">
                     <i class="fa-solid fa-trash"></i>
                 </button>
             </div>
-            <div class="border-t border-gray-200 dark:border-slate-700 pt-3">
+            <div class="pt-3" style="border-top:1px solid var(--color-border)">
                 <div class="flex items-center gap-2 mb-2.5 flex-wrap">
-                    <span class="text-xs text-gray-600 dark:text-slate-400 font-medium">Trigger words to exact match within the feed's</span>
+                    <span class="text-xs font-medium" style="color:var(--color-text-muted)">Trigger words to exact match within the feed's</span>
                     ${filterSelectHTML}
                 </div>
                 <form class="flex gap-2 mb-2.5" onsubmit="handleAddKeyword(event, ${feed.id})">
                     <input type="text" id="kwInput-${feed.id}" placeholder="New trigger word..." required
-                           class="input-field flex-1 py-1.5">
+                           class="input-field flex-1" style="padding:0.375rem 0.625rem">
                     <button type="submit"
                             class="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg px-3 py-1.5 transition-colors">
                         <i class="fa-solid fa-plus"></i>
                     </button>
                 </form>
                 <div class="flex flex-wrap gap-1.5">
-                    ${keywordsHTML || '<span class="text-xs text-gray-400 dark:text-slate-500">No trigger words yet.</span>'}
+                    ${keywordsHTML || '<span class="text-xs" style="color:var(--color-text-faint)">No trigger words yet.</span>'}
                 </div>
             </div>
         `;
@@ -269,21 +262,21 @@ async function triggerCheckFeeds() {
         if (data.previews) {
             let html = '';
             if (data.previews.length === 0) {
-                html = '<p class="text-gray-500 dark:text-slate-400">No feeds registered for preview.</p>';
+                html = '<p style="color:var(--color-text-muted)">No feeds registered for preview.</p>';
             } else {
                 data.previews.forEach(p => {
-                    html += `<h3 class="font-semibold text-gray-900 dark:text-slate-100 mt-4 first:mt-0 mb-2">${p.feed_name}</h3>`;
+                    html += `<h3 class="font-semibold mt-4 first:mt-0 mb-2">${p.feed_name}</h3>`;
                     if (p.entries.length === 0) {
-                        html += '<p class="text-gray-500 dark:text-slate-400 text-sm">No entries found.</p>';
+                        html += '<p class="text-sm" style="color:var(--color-text-muted)">No entries found.</p>';
                     } else {
                         html += `<ul class="flex flex-col gap-2 mb-3">`;
                         p.entries.forEach(e => {
                             html += `
-                                <li class="border-b border-gray-100 dark:border-slate-700 pb-2">
-                                    <strong class="text-gray-700 dark:text-slate-300">Title:</strong>
+                                <li class="pb-2" style="border-bottom:1px solid var(--color-border-subtle)">
+                                    <strong style="color:var(--color-text-sec)">Title:</strong>
                                     <a href="${e.url}" target="_blank" class="text-blue-600 hover:underline ml-1">${e.title}</a><br>
-                                    <strong class="text-gray-700 dark:text-slate-300">Description:</strong>
-                                    <span class="text-xs text-gray-600 dark:text-slate-400 ml-1">${e.description ? e.description.substring(0, 500) + (e.description.length > 500 ? '...' : '') : '<i>No description</i>'}</span>
+                                    <strong style="color:var(--color-text-sec)">Description:</strong>
+                                    <span class="text-xs ml-1" style="color:var(--color-text-muted)">${e.description ? e.description.substring(0, 500) + (e.description.length > 500 ? '...' : '') : '<i>No description</i>'}</span>
                                 </li>
                             `;
                         });
@@ -324,7 +317,7 @@ function renderEntries(entries) {
     container.innerHTML = '';
 
     if (entries.length === 0) {
-        container.innerHTML = '<p class="text-sm text-gray-500 dark:text-slate-400 text-center py-8">No entries yet — run a feed check to populate.</p>';
+        container.innerHTML = '<p class="text-sm text-center py-8" style="color:var(--color-text-muted)">No entries yet — run a feed check to populate.</p>';
         countBadge.textContent = '';
         return;
     }
@@ -339,29 +332,28 @@ function renderEntries(entries) {
         const dateLabel = date ? date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : null;
 
         if (dateLabel && dateLabel !== lastDate) {
-            html += `<div class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide pt-3 pb-1 border-b border-gray-100 dark:border-slate-700">${dateLabel}</div>`;
+            html += `<div class="text-xs font-semibold uppercase tracking-wide pt-3 pb-1" style="color:var(--color-text-faint);border-bottom:1px solid var(--color-border-subtle)">${dateLabel}</div>`;
             lastDate = dateLabel;
         }
 
         const timeStr = date ? date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : '';
-        const alertedClass = item.alerted
-            ? 'border-l-4 border-amber-400 bg-amber-50 dark:bg-amber-900/10'
-            : '';
+        const alertedClass = item.alerted ? 'entry-alerted' : '';
         const alertBadge = item.alerted
-            ? `<span class="inline-flex items-center gap-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-semibold px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-700">
+            ? `<span class="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full"
+                    style="background:#fef3c7;color:#92400e;border:1px solid #fde68a">
                    <i class="fa-solid fa-bell"></i> ${item.keyword}
                </span>`
             : '';
 
         html += `
-            <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-3 transition-colors ${alertedClass}">
-                <div class="text-xs text-gray-400 dark:text-slate-500 mb-1 flex items-center gap-1.5 flex-wrap">
+            <div class="card ${alertedClass}">
+                <div class="text-xs mb-1 flex items-center gap-1.5 flex-wrap" style="color:var(--color-text-faint)">
                     <span><i class="fa-regular fa-clock"></i> ${timeStr}</span>
                     <span>&bull;</span>
                     <span>${item.feed_name}</span>
                     ${alertBadge}
                 </div>
-                <div class="text-sm font-semibold text-gray-900 dark:text-slate-100">
+                <div class="text-sm font-semibold">
                     <a href="${item.url}" target="_blank" class="hover:text-blue-600 transition-colors">${item.title || item.url}</a>
                 </div>
             </div>

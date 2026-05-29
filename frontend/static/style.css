@@ -1,62 +1,8 @@
-/* Modal visibility — toggled by JS via .active class */
-.modal-overlay          { display: none; }
-.modal-overlay.active   { display: flex; }
+/* RSS Notify — app-specific styles only. Shared tokens/components are in theme.css */
 
-/* Reusable icon button */
-.icon-btn {
-    width: 2.25rem;
-    height: 2.25rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 0.5rem;
-    border: 1px solid #e5e7eb;
-    background: #ffffff;
-    color: #6b7280;
-    cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease;
+/* Keyword badge alerted state */
+.entry-alerted {
+  border-left: 4px solid #f59e0b;
+  background: #fffbeb;
 }
-.icon-btn:hover { background: #f9fafb; color: #111827; }
-.icon-btn:active { transform: scale(0.95); }
-
-/* Dark mode icon button overrides */
-html.dark .icon-btn {
-    background: #334155;
-    border-color: #475569;
-    color: #94a3b8;
-}
-html.dark .icon-btn:hover { background: #475569; color: #f1f5f9; }
-
-/* Shared input style */
-.input-field {
-    width: 100%;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.875rem;
-    background: #ffffff;
-    color: #111827;
-    outline: none;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    font-family: inherit;
-}
-.input-field:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 2px #bfdbfe;
-}
-
-html.dark .input-field {
-    background: #162032;
-    border-color: #475569;
-    color: #f1f5f9;
-}
-html.dark .input-field:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3);
-}
-
-/* Select option background in dark mode */
-html.dark select option {
-    background-color: #1e293b;
-    color: #f1f5f9;
-}
+html.dark .entry-alerted { background: rgba(245, 158, 11, 0.08); }
