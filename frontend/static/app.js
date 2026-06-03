@@ -429,7 +429,7 @@ function renderEntries(entries) {
                     ${alertBadge}
                 </div>
                 <div class="text-sm font-semibold">
-                    <a href="${item.url}" target="_blank" class="hover:text-blue-600 transition-colors">${item.title || item.url}</a>
+                    <a href="${item.url}" target="_blank" class="hover:text-blue-600 transition-colors">${(item.company ? (item.title || '').replace(new RegExp('^\\[' + item.company.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\]\\s*', 'i'), '') : item.title) || item.url}</a>
                 </div>
             </div>
         `;
