@@ -10,7 +10,7 @@ function toggleDarkMode() {
 
 async function loadCompanies() {
     try {
-        const res = await fetch('/api/companies?all_favorites=true');
+        const res = await request('/api/companies?all_favorites=true');
         const companies = await res.json();
         renderCompanies(companies);
     } catch (e) {
@@ -68,6 +68,11 @@ function renderCompanies(companies) {
     }
 
     container.innerHTML = `<div class="flex flex-col gap-4">${html}</div>`;
+    container.querySelectorAll('[data-company]').forEach(button => button.addEventListener('click', async () => {
+        button.disabled = true;
+        await toggleFavorite(button.dataset.company);
+        button.disabled = false;
+    }));
 }
 
 function renderCompanyRow(c) {
@@ -75,25 +80,24 @@ function renderCompanyRow(c) {
     const btnLabel = c.is_favorite
         ? '<i class="fa-solid fa-star text-xs"></i> Favorited'
         : '<i class="fa-regular fa-star text-xs"></i> Add';
-    const safeName = c.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
     return `
-        <div class="company-row" id="row-${CSS.escape(c.name)}">
+        <div class="company-row" >
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2.5">
-                    <span class="font-medium text-sm">${c.name}</span>
+                    <span class="font-medium text-sm">${escapeText(c.name)}</span>
                     <span class="text-xs" style="color:var(--color-text-faint)">${c.count} ${c.count === 1 ? 'entry' : 'entries'}</span>
                 </div>
-                <button class="${btnClass}" onclick="toggleFavorite('${safeName}')">${btnLabel}</button>
+                <button class="${btnClass}" data-company="${escapeText(c.name)}" aria-pressed="${c.is_favorite}">${btnLabel}</button>
             </div>
         </div>`;
 }
 
 async function toggleFavorite(name) {
     try {
-        const res = await fetch(`/api/companies/${encodeURIComponent(name)}/favorite`, { method: 'POST' });
+        const res = await request(`/api/companies/${encodeURIComponent(name)}/favorite`, { method: 'POST' });
         const data = await res.json();
         // Reload to re-sort into correct section
-        loadCompanies();
+        await loadCompanies();
     } catch (e) {
         console.error("Error toggling favorite", e);
     }

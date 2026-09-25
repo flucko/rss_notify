@@ -5,6 +5,7 @@ let feedMode = 'all';
 
 document.addEventListener('DOMContentLoaded', () => {
     initDarkMode();
+    document.getElementById('entrySearch').addEventListener('input', applyFilters);
     loadSettings();
     loadFeeds();
     loadEntries();
@@ -47,7 +48,7 @@ function toggleDarkMode() {
 
 async function loadSettings() {
     try {
-        const res = await fetch('/api/settings');
+        const res = await request('/api/settings');
         const settings = await res.json();
         document.getElementById('pushoverToken').value = settings.pushover_token || '';
         document.getElementById('pushoverUserKey').value = settings.pushover_user_key || '';
@@ -64,7 +65,7 @@ async function handleSaveSettings(e) {
     const frequency = parseInt(document.getElementById('checkFrequency').value, 10);
 
     try {
-        await fetch('/api/settings', {
+        await request('/api/settings', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
@@ -74,21 +75,24 @@ async function handleSaveSettings(e) {
             })
         });
         showMsg('settingsMsg', 'Settings saved!', 'success');
+        return true;
     } catch (e) {
         console.error("Error saving settings", e);
+        return false;
     }
 }
 
 async function testPushover() {
     const btn = document.getElementById('testPushoverBtn');
-    await handleSaveSettings(new Event('submit', {cancelable: true}));
+    if (!document.getElementById('settingsForm').reportValidity()) return;
+    if (!await handleSaveSettings(new Event('submit', {cancelable: true}))) return;
 
     const originalHTML = btn.innerHTML;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
     btn.disabled = true;
 
     try {
-        const res = await fetch('/api/test-pushover', { method: 'POST' });
+        const res = await request('/api/test-pushover', { method: 'POST' });
         if (res.ok) {
             showMsg('settingsMsg', 'Test notification sent!', 'success');
         } else {
@@ -115,7 +119,7 @@ function showMsg(id, text, type) {
 
 async function loadFeeds() {
     try {
-        const res = await fetch('/api/feeds');
+        const res = await request('/api/feeds');
         const feeds = await res.json();
         renderFeeds(feeds);
     } catch (e) {
@@ -139,7 +143,7 @@ function renderFeeds(feeds) {
         const keywordsHTML = feed.keywords.map(kw => `
             <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full"
                   style="background:var(--color-accent-bg);color:var(--color-accent);border:1px solid var(--color-accent-ring)">
-                ${kw.word}
+                ${escapeText(kw.word)}
                 <i class="fa-solid fa-xmark cursor-pointer opacity-60 hover:opacity-100 hover:text-red-500 transition-colors" onclick="deleteKeyword(${kw.id})"></i>
             </span>
         `).join('');
@@ -156,9 +160,9 @@ function renderFeeds(feeds) {
         div.innerHTML = `
             <div class="flex justify-between items-start mb-3">
                 <div>
-                    <h3 class="font-semibold mb-0.5">${feed.name}</h3>
+                    <h3 class="font-semibold mb-0.5">${escapeText(feed.name)}</h3>
                     <p class="text-xs" style="color:var(--color-text-muted)">
-                        <a href="${feed.url}" target="_blank" class="text-blue-600 hover:underline">${feed.url}</a>
+                        <a href="${escapeText(safeUrl(feed.url))}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">${escapeText(feed.url)}</a>
                     </p>
                 </div>
                 <button onclick="deleteFeed(${feed.id})" title="Delete feed" class="btn-danger btn-sm">
@@ -194,7 +198,7 @@ async function handleAddFeed(e) {
     const filter_target = document.getElementById('feedFilterTarget').value;
 
     try {
-        await fetch('/api/feeds', {
+        await request('/api/feeds', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({name, url, filter_target})
@@ -208,7 +212,7 @@ async function handleAddFeed(e) {
 
 async function updateFeedFilter(id, value) {
     try {
-        await fetch(`/api/feeds/${id}`, {
+        await request(`/api/feeds/${id}`, {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({filter_target: value})
@@ -221,7 +225,7 @@ async function updateFeedFilter(id, value) {
 async function deleteFeed(id) {
     if (!confirm('Are you sure you want to delete this feed?')) return;
     try {
-        await fetch(`/api/feeds/${id}`, { method: 'DELETE' });
+        await request(`/api/feeds/${id}`, { method: 'DELETE' });
         loadFeeds();
     } catch (e) {
         console.error("Error deleting feed", e);
@@ -234,7 +238,7 @@ async function handleAddKeyword(e, feedId) {
     const word = input.value;
 
     try {
-        await fetch(`/api/feeds/${feedId}/keywords`, {
+        await request(`/api/feeds/${feedId}/keywords`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({word})
@@ -248,7 +252,7 @@ async function handleAddKeyword(e, feedId) {
 
 async function deleteKeyword(id) {
     try {
-        await fetch(`/api/keywords/${id}`, { method: 'DELETE' });
+        await request(`/api/keywords/${id}`, { method: 'DELETE' });
         loadFeeds();
     } catch (e) {
         console.error("Error deleting keyword", e);
@@ -262,7 +266,7 @@ async function triggerCheckFeeds() {
     btn.disabled = true;
 
     try {
-        const res = await fetch('/api/check', { method: 'POST' });
+        const res = await request('/api/check', { method: 'POST' });
         const data = await res.json();
 
         if (data.previews) {
@@ -271,7 +275,7 @@ async function triggerCheckFeeds() {
                 html = '<p style="color:var(--color-text-muted)">No feeds registered for preview.</p>';
             } else {
                 data.previews.forEach(p => {
-                    html += `<h3 class="font-semibold mt-4 first:mt-0 mb-2">${p.feed_name}</h3>`;
+                    html += `<h3 class="font-semibold mt-4 first:mt-0 mb-2">${escapeText(p.feed_name)}</h3>`;
                     if (p.entries.length === 0) {
                         html += '<p class="text-sm" style="color:var(--color-text-muted)">No entries found.</p>';
                     } else {
@@ -280,9 +284,9 @@ async function triggerCheckFeeds() {
                             html += `
                                 <li class="pb-2" style="border-bottom:1px solid var(--color-border-subtle)">
                                     <strong style="color:var(--color-text-sec)">Title:</strong>
-                                    <a href="${e.url}" target="_blank" class="text-blue-600 hover:underline ml-1">${e.title}</a><br>
+                                    <a href="${escapeText(safeUrl(e.url))}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline ml-1">${escapeText(e.title)}</a><br>
                                     <strong style="color:var(--color-text-sec)">Description:</strong>
-                                    <span class="text-xs ml-1" style="color:var(--color-text-muted)">${e.description ? e.description.substring(0, 500) + (e.description.length > 500 ? '...' : '') : '<i>No description</i>'}</span>
+                                    <span class="text-xs ml-1" style="color:var(--color-text-muted)">${e.description ? escapeText(e.description.substring(0, 500)) + (e.description.length > 500 ? '…' : '') : '<i>No description</i>'}</span>
                                 </li>
                             `;
                         });
@@ -310,17 +314,18 @@ async function triggerCheckFeeds() {
 
 async function loadEntries() {
     try {
-        const res = await fetch('/api/entries');
+        const res = await request('/api/entries');
         allEntries = await res.json();
         applyFilters();
     } catch (e) {
         console.error("Error loading entries", e);
+        document.getElementById('entriesContainer').innerHTML = '<p class="empty-state">Could not load feed activity. <button class="btn-secondary" onclick="loadEntries()">Try again</button></p>';
     }
 }
 
 async function loadCompanies() {
     try {
-        const res = await fetch('/api/companies');
+        const res = await request('/api/companies');
         allCompanies = await res.json();
         if (feedMode === 'favorites') renderFavoriteCompanyPills();
         applyFilters();
@@ -332,6 +337,8 @@ async function loadCompanies() {
 function setFeedMode(mode) {
     feedMode = mode;
     activeCompany = null;
+    document.getElementById('modeAll').setAttribute('aria-pressed', String(mode === 'all'));
+    document.getElementById('modeFavorites').setAttribute('aria-pressed', String(mode === 'favorites'));
     document.getElementById('modeAll').classList.toggle('active', mode === 'all');
     document.getElementById('modeFavorites').classList.toggle('active', mode === 'favorites');
     const pillsEl = document.getElementById('favoriteCompanyPills');
@@ -357,6 +364,8 @@ function applyFilters() {
         filtered = allEntries.filter(e => favNames.has(e.company));
         if (activeCompany) filtered = filtered.filter(e => e.company === activeCompany);
     }
+    const query = document.getElementById('entrySearch').value.trim().toLowerCase();
+    if (query) filtered = filtered.filter(entry => [entry.title, entry.company, entry.feed_name].some(value => String(value || '').toLowerCase().includes(query)));
     renderEntries(filtered);
 }
 
@@ -369,12 +378,13 @@ function renderFavoriteCompanyPills() {
     }
     const total = favs.reduce((s, c) => s + c.count, 0);
     const allPill = `<button class="company-pill${activeCompany === null ? ' active' : ''}" onclick="setActiveCompany(null)">All Favorites <span class="pill-count">${total}</span></button>`;
-    const pills = favs.map(c =>
-        `<button class="company-pill is-favorite${activeCompany === c.name ? ' active' : ''}" onclick="setActiveCompany('${c.name.replace(/'/g,"\\'")}')">
-            ${c.name} <span class="pill-count">${c.count}</span>
+    const pills = favs.map((c, index) =>
+        `<button class="company-pill is-favorite${activeCompany === c.name ? ' active' : ''}" aria-pressed="${activeCompany === c.name}" data-company-index="${index}">
+            ${escapeText(c.name)} <span class="pill-count">${c.count}</span>
         </button>`
     ).join('');
     container.innerHTML = allPill + pills;
+    container.querySelectorAll('[data-company-index]').forEach(button => button.addEventListener('click', () => setActiveCompany(favs[Number(button.dataset.companyIndex)].name)));
 }
 
 function renderEntries(entries) {
@@ -383,11 +393,11 @@ function renderEntries(entries) {
     container.innerHTML = '';
 
     if (entries.length === 0) {
-        const msg = feedMode === 'favorites'
+        const msg = document.getElementById('entrySearch').value.trim() ? 'No matching stories. Try another search or clear the search field.' : feedMode === 'favorites'
             ? `No entries from your favorite companies in the last 7 days. <a href="/favorites" style="color:var(--color-accent)">Manage favorites</a>`
             : 'No entries yet — run a feed check to populate.';
         container.innerHTML = `<p class="text-sm text-center py-8" style="color:var(--color-text-muted)">${msg}</p>`;
-        countBadge.textContent = '';
+        countBadge.textContent = '0';
         return;
     }
 
@@ -411,12 +421,12 @@ function renderEntries(entries) {
         const alertBadge = item.alerted
             ? `<span class="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full"
                     style="background:#fef3c7;color:#92400e;border:1px solid #fde68a">
-                   <i class="fa-solid fa-bell"></i> ${item.keyword}
+                   <i class="fa-solid fa-bell"></i> ${escapeText(item.keyword)}
                </span>`
             : '';
 
         const companyBadge = item.company
-            ? `<span class="text-xs px-1.5 py-0.5 rounded" style="background:var(--color-bg-subtle);color:var(--color-text-muted);border:1px solid var(--color-border)">[${item.company}]</span>`
+            ? `<span class="text-xs px-1.5 py-0.5 rounded" style="background:var(--color-bg-subtle);color:var(--color-text-muted);border:1px solid var(--color-border)">[${escapeText(item.company)}]</span>`
             : '';
 
         html += `
@@ -424,12 +434,12 @@ function renderEntries(entries) {
                 <div class="text-xs mb-1 flex items-center gap-1.5 flex-wrap" style="color:var(--color-text-faint)">
                     <span><i class="fa-regular fa-clock"></i> ${timeStr}</span>
                     <span>&bull;</span>
-                    <span>${item.feed_name}</span>
+                    <span>${escapeText(item.feed_name)}</span>
                     ${companyBadge}
                     ${alertBadge}
                 </div>
                 <div class="text-sm font-semibold">
-                    <a href="${item.url}" target="_blank" class="hover:text-blue-600 transition-colors">${(item.company ? (item.title || '').replace(new RegExp('^\\[' + item.company.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\]\\s*', 'i'), '') : item.title) || item.url}</a>
+                    <a href="${escapeText(safeUrl(item.url))}" target="_blank" rel="noopener noreferrer" class="hover:text-blue-600 transition-colors">${escapeText(item.title || item.url)}</a>
                 </div>
             </div>
         `;

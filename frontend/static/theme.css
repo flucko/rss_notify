@@ -1,39 +1,39 @@
 /* ── Design tokens ─────────────────────────────────────────────────────────── */
 :root {
-  --color-bg-page:     #f9fafb;
+  --color-bg-page:     #f5f7f8;
   --color-bg-card:     #ffffff;
-  --color-bg-subtle:   #f9fafb;
+  --color-bg-subtle:   #f5f7f8;
   --color-bg-input:    #ffffff;
-  --color-border:      #e5e7eb;
-  --color-border-subtle: #f3f4f6;
-  --color-text:        #111827;
-  --color-text-sec:    #374151;
-  --color-text-muted:  #6b7280;
-  --color-text-faint:  #9ca3af;
-  --color-accent:      #2563eb;
-  --color-accent-hov:  #1d4ed8;
-  --color-accent-ring: #bfdbfe;
-  --color-accent-bg:   #eff6ff;
+  --color-border:      #e2e8e5;
+  --color-border-subtle: #edf2ef;
+  --color-text:        #1d302c;
+  --color-text-sec:    #425d52;
+  --color-text-muted:  #697872;
+  --color-text-faint:  #75867d;
+  --color-accent:      #174d40;
+  --color-accent-hov:  #24634f;
+  --color-accent-ring: #d6edbf;
+  --color-accent-bg:   #edf4e7;
   --color-positive:    #16a34a;
   --color-negative:    #dc2626;
 }
 
 html.dark {
   color-scheme: dark;
-  --color-bg-page:     #0f172a;
-  --color-bg-card:     #1e293b;
-  --color-bg-subtle:   #162032;
-  --color-bg-input:    #162032;
-  --color-border:      #334155;
-  --color-border-subtle: #1e2d45;
-  --color-text:        #f1f5f9;
-  --color-text-sec:    #e2e8f0;
-  --color-text-muted:  #94a3b8;
-  --color-text-faint:  #64748b;
-  --color-accent:      #60a5fa;
-  --color-accent-hov:  #3b82f6;
-  --color-accent-ring: #1e3a5f;
-  --color-accent-bg:   #172554;
+  --color-bg-page:     #12221d;
+  --color-bg-card:     #1b3028;
+  --color-bg-subtle:   #172a23;
+  --color-bg-input:    #172a23;
+  --color-border:      #354c40;
+  --color-border-subtle: #294034;
+  --color-text:        #edf4ef;
+  --color-text-sec:    #d3e2d8;
+  --color-text-muted:  #a7b9ae;
+  --color-text-faint:  #99aea0;
+  --color-accent:      #d6f5a8;
+  --color-accent-hov:  #bddf8e;
+  --color-accent-ring: #435e39;
+  --color-accent-bg:   #2b422d;
 }
 
 /* ── Base ──────────────────────────────────────────────────────────────────── */
@@ -212,3 +212,43 @@ html.dark select option {
   padding: 1.5rem;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
 }
+
+/* Shared with Ensemble income: forest green, lime, serif headlines, quiet panels. */
+:root { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color-scheme: light; }
+body { font-family: inherit !important; }
+.nav-inner { min-height: 88px; gap: 20px; }
+.brand-mark { display: grid; place-items: center; width: 40px; height: 40px; background: #174d40; color: #d6f5a8; border-radius: 12px; font-size: 20px; }
+main { padding-top: 38px !important; padding-bottom: 48px !important; gap: 22px !important; }
+.page-heading { padding: 0 0 12px; }
+.eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 1.7px; color: var(--color-text-muted); margin-bottom: 14px; }
+.page-heading h1 { font: 400 clamp(30px, 4vw, 42px)/1.18 Georgia, "Times New Roman", serif; letter-spacing: -1.3px; margin: 0 0 14px; }
+.page-heading p { font-size: 15px; line-height: 1.7; color: var(--color-text-muted); max-width: 600px; }
+.card { padding: 24px; box-shadow: none; border-radius: 12px; }
+.card .card { padding: 16px; }
+.btn-primary, .btn-secondary, .input-field { min-height: 42px; border-radius: 7px; }
+.btn-primary { background: #174d40; color: #efffde; }
+.btn-primary:hover { background: #24634f; }
+.icon-btn, .theme-btn { min-width: 42px; min-height: 42px; }
+.sync-button { display: inline-flex; align-items: center; gap: 9px; white-space: nowrap; }
+button:disabled { opacity: .55; cursor: wait; }
+:where(button, a, input, select):focus-visible { outline: 3px solid #7daf47; outline-offset: 3px; }
+.text-blue-600, .text-blue-700 { color: var(--color-accent) !important; }
+.bg-blue-100 { background: var(--color-accent-bg) !important; }
+.bg-green-600 { background: #174d40 !important; }
+.bg-green-600:hover { background: #24634f !important; }
+.modal-panel { border-radius: 14px; }
+.skip-link { position: fixed; top: -100px; left: 16px; z-index: 100; padding: 12px; background: var(--color-bg-card); }
+.skip-link:focus { top: 12px; }
+#appNotice { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 100; max-width: calc(100% - 32px); width: max-content; padding: 14px 20px; border-radius: 9px; background: #174d40; color: #fff; box-shadow: 0 8px 30px #12221d30; }
+#appNotice[data-error="true"] { background: #873e2c; }
+@media(max-width: 640px) {
+ .nav-inner { flex-wrap: wrap; gap: 12px; padding: 15px 0; }
+ .nav-brand-group { width: 100%; justify-content: space-between; gap: 12px !important; }
+ .nav-bar { position: static; }
+ main { padding-top: 26px !important; }
+ .card { padding: 18px; }
+ .company-row > div { gap: 12px; }
+ .company-row > div > div { flex-wrap: wrap; min-width: 0; }
+ .company-row span { overflow-wrap: anywhere; }
+}
+@media(prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }

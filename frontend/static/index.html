@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RSS Notify</title>
     <script>if (localStorage.getItem('rss-dark') === 'true') document.documentElement.classList.add('dark');</script>
-    <script>tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['system-ui', 'sans-serif'] } } } }</script>
     <script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['system-ui', 'sans-serif'] } } } }</script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/static/theme.css">
     <link rel="stylesheet" href="/static/style.css">
@@ -14,40 +14,42 @@
 <body class="min-h-screen font-sans">
 
     <!-- Navigation bar -->
-    <nav class="nav-bar">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <nav class="nav-bar" aria-label="Main navigation">
         <div class="max-w-6xl mx-auto px-4 sm:px-6">
-            <div class="flex justify-between h-14 items-center">
-                <div class="flex items-center gap-6">
+            <div class="nav-inner flex justify-between items-center">
+                <div class="nav-brand-group flex items-center gap-6">
                     <div class="flex items-center gap-2.5">
-                        <i class="fa-solid fa-rss-square text-blue-600 text-lg"></i>
+                        <i class="fa-solid fa-rss brand-mark"></i>
                         <span class="text-lg font-semibold tracking-tight">RSS Notify</span>
                     </div>
                     <div class="flex gap-4 text-sm">
-                        <a href="/" class="nav-link active">Feed</a>
-                        <a href="/favorites" class="nav-link">Favorite Selection</a>
+                        <a href="/" class="nav-link active" aria-current="page">Feed</a>
+                        <a href="/favorites" class="nav-link">Favorites</a>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button id="darkModeBtn" class="theme-btn" title="Toggle dark mode">
+                    <button id="darkModeBtn" class="theme-btn" title="Toggle dark mode" aria-label="Toggle dark mode">
                         <i class="fa-solid fa-sun dark-sun" style="width:1rem;height:1rem;"></i>
                         <i class="fa-solid fa-moon dark-moon" style="width:1rem;height:1rem;"></i>
                     </button>
-                    <button id="settingsBtn" class="icon-btn" title="Settings">
+                    <button id="settingsBtn" class="icon-btn" title="Settings" aria-label="Settings">
                         <i class="fa-solid fa-gear text-sm"></i>
                     </button>
-                    <button id="feedsBtn" class="icon-btn" title="Manage Feeds &amp; Keywords">
+                    <button id="feedsBtn" class="icon-btn" title="Manage Feeds &amp; Keywords" aria-label="Manage feeds and keywords">
                         <i class="fa-solid fa-plus text-sm"></i>
                     </button>
-                    <button id="checkNowBtn" class="icon-btn" title="Check Feeds Now">
-                        <i class="fa-solid fa-rotate text-sm"></i>
+                    <button id="checkNowBtn" class="btn-primary sync-button" title="Check Feeds Now">
+                        <i class="fa-solid fa-rotate text-sm"></i><span>Sync feeds</span>
                     </button>
                 </div>
             </div>
         </div>
     </nav>
 
-    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-4">
+    <main id="main-content" class="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-4">
 
+        <header class="page-heading"><div class="eyebrow">YOUR DAILY SIGNAL</div><h1>A little less noise.<br>A little more in the know.</h1><p>Your feeds, favorite companies, and everyday reminders in one place.</p></header>
         <!-- Settings Modal -->
         <div id="settingsModal" class="modal-overlay fixed inset-0 bg-black/50 backdrop-blur-sm z-50 items-center justify-center">
             <div class="modal-panel w-full max-w-md mx-4 max-h-[85vh] overflow-y-auto">
@@ -79,7 +81,7 @@
                         </button>
                     </div>
                 </form>
-                <div id="settingsMsg" class="mt-3 text-sm text-center"></div>
+                <div role="status" aria-live="polite" id="settingsMsg" class="mt-3 text-sm text-center"></div>
             </div>
         </div>
 
@@ -127,27 +129,30 @@
         <div class="card" style="padding:0.625rem 1.25rem">
             <div class="flex items-center gap-3 flex-wrap">
                 <div class="mode-toggle">
-                    <button class="mode-btn active" id="modeAll" onclick="setFeedMode('all')">All</button>
-                    <button class="mode-btn" id="modeFavorites" onclick="setFeedMode('favorites')">
+                    <button class="mode-btn active" aria-pressed="true" id="modeAll" onclick="setFeedMode('all')">All</button>
+                    <button class="mode-btn" aria-pressed="false" id="modeFavorites" onclick="setFeedMode('favorites')">
                         <i class="fa-solid fa-star text-xs mr-1"></i>Favorites
                     </button>
                 </div>
+                <label class="search-field"><span class="sr-only">Search feed activity</span><input id="entrySearch" type="search" class="input-field" placeholder="Search titles, companies, or feeds…"></label>
                 <div id="favoriteCompanyPills" class="flex items-center gap-2 flex-wrap" style="display:none"></div>
             </div>
         </div>
 
         <!-- Feed Activity -->
-        <div class="card">
+        <div class="card activity-panel">
             <div class="flex items-center gap-2 mb-4 pb-3" style="border-bottom: 1px solid var(--color-border)">
                 <i class="fa-solid fa-newspaper text-blue-600"></i>
                 <h2 class="text-lg font-semibold">Feed Activity</h2>
                 <span id="entriesCount" class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold"></span>
             </div>
-            <div id="entriesContainer" class="flex flex-col"></div>
+            <div id="entriesContainer" class="flex flex-col"><p class="empty-state">Loading feed activity…</p></div>
         </div>
 
     </main>
 
+    <div id="appNotice" role="status" aria-live="polite" hidden></div>
+    <script src="/static/ux.js"></script>
     <script src="/static/app.js"></script>
 </body>
 </html>

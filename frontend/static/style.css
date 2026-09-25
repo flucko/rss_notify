@@ -85,3 +85,17 @@ html.dark .company-pill.is-favorite { border-color: #d97706; }
 .fav-btn:hover { border-color: #f59e0b; color: #f59e0b; }
 .fav-btn.lit { border-color: #f59e0b; color: #b45309; background: #fffbeb; }
 html.dark .fav-btn.lit { color: #fbbf24; background: rgba(245, 158, 11, 0.1); }
+
+.mode-toggle { padding: 4px; gap: 4px; background: var(--color-bg-subtle); }
+.mode-btn { min-height: 34px; border-radius: 5px; }
+.mode-btn.active { background: var(--color-bg-card); color: var(--color-accent); box-shadow: 0 1px 4px #19372b12; }
+.search-field { flex: 1; min-width: min(100%, 230px); }
+.search-field input { font-size: 14px; }
+#favoriteCompanyPills { flex-basis: 100%; }
+#entriesContainer .card { border: 0; border-bottom: 1px solid var(--color-border); border-radius: 6px; padding: 18px 14px; }
+#entriesContainer a { line-height: 1.65; overflow-wrap: anywhere; }
+#feedsContainer a { overflow-wrap: anywhere; }
+.empty-state { padding: 32px 12px; text-align: center; color: var(--color-text-muted); }
+.reminder-del-btn { opacity: .65; min-width: 32px; min-height: 32px; }
+.reminder-card { padding-right: 38px !important; }
+.company-pill.active { color: var(--color-bg-card); }
